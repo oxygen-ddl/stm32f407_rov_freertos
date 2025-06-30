@@ -27,6 +27,8 @@
 /* USER CODE BEGIN Includes */
 #include "jy901p_uart.h"
 #include "chat_with_upper.h"
+#include "ms5837_iic.h"
+#include "func_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -130,7 +132,11 @@ void MX_FREERTOS_Init(void) {
   
   SendAllPack_TaskInit(); //加入发送任务的初始化函数，创建发送任务
 
-  Parser_Init(); //加入解析器初始化函数，创建解析器任务和队列
+  Parser_StartTask(); //加入解析器初始化函数，创建解析器任务和队列
+
+  MS5837_StartTask(); //加入MS5837传感器任务的初始化函数，创建传感器任务
+
+  view_variables_StartTask(); //加入变量观测任务的初始化函数，创建变量观测任务
 
   /* USER CODE END RTOS_THREADS */
 

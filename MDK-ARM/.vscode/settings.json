@@ -10,6 +10,8 @@
         "func_uart.h": "c",
         "chat_with_upper.h": "c",
         "distance_measure.h": "c",
-        "mx5837_iic.h": "c"
+        "mx5837_iic.h": "c",
+        "usart.h": "c",
+        "math.h": "c"
     }
 }

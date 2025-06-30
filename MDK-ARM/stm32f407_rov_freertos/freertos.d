@@ -46,3 +46,6 @@ stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CM
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/chat_with_upper.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_iic.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/func_uart.h
+stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdbool.h

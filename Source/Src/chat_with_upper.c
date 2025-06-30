@@ -1,7 +1,7 @@
 #include "chat_with_upper.h"
 #include "jy901p_uart.h"
 #include "transmit_power_board.h"
-#include "mx5837_iic.h"
+#include "ms5837_iic.h"
 #include "distance_measure.h"
 #include "ath20_bmp280.h"
 #include "move_control.h"
@@ -94,8 +94,8 @@ void data_packup(uint8_t startbit)
         break;
 
     case (TX_StartBit_DEP):
-        conv[0].value = mx5837_depth;
-        conv[1].value = mx5837_depth;
+        conv[0].value = ms5837_depth;
+        conv[1].value = ms5837_depth;
         conv[2].value = wave_distance[0];
         conv[3].value = wave_distance[1];
 
@@ -379,7 +379,7 @@ static void vParserTask(void *pv)
 }
 static uint8_t rxByte;
 /* 在 reeRTOS init 里调用一次 */
-void Parser_Init(void)
+void Parser_StartTask(void)
 {
     // 帧队列，深度 5 帧
     xFrameQueue = xQueueCreate(5, sizeof(Frame_t));

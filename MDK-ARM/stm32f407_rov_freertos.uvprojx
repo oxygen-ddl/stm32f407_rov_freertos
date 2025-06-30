@@ -596,9 +596,9 @@
               <FilePath>..\Source\Inc\func_uart.h</FilePath>
             </File>
             <File>
-              <FileName>mx5837_iic.h</FileName>
+              <FileName>ms5837_iic.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\Source\Inc\mx5837_iic.h</FilePath>
+              <FilePath>..\Source\Inc\ms5837_iic.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -646,9 +646,9 @@
               <FilePath>..\Source\Src\func_uart.c</FilePath>
             </File>
             <File>
-              <FileName>mx5837_iic.c</FileName>
+              <FileName>ms5837_iic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Source\Src\mx5837_iic.c</FilePath>
+              <FilePath>..\Source\Src\ms5837_iic.c</FilePath>
             </File>
           </Files>
         </Group>
