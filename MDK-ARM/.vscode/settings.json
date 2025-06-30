@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "freertos.h": "c",
+        "stream_buffer.h": "c",
+        "jy901p_uart.h": "c",
+        "stm32f4xx_hal.h": "c",
+        "mx5837_uart.h": "c",
+        "semphr.h": "c",
+        "stdarg.h": "c",
+        "func_uart.h": "c",
+        "chat_with_upper.h": "c",
+        "distance_measure.h": "c",
+        "mx5837_iic.h": "c"
+    }
+}
