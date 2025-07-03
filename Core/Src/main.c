@@ -103,11 +103,9 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
+  MX_TIM11_Init();
+  MX_TIM14_Init();
   /* USER CODE BEGIN 2 */
-  /* 使能 DWT_CYCCNT 作为 run-time 统计时基 */
-  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-  DWT->CYCCNT = 0;
-  DWT->CTRL   |= DWT_CTRL_CYCCNTENA_Msk;
 
 
   /* USER CODE END 2 */
@@ -180,6 +178,9 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+#include "move_control.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 /* USER CODE END 4 */
 
@@ -194,11 +195,23 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+    if (htim->Instance == TIM11)
+    {
+        xSemaphoreGiveFromISR(xTimer11Semaphore, &xHigherPriorityTaskWoken);
+    }
+    else if (htim->Instance == TIM14)
+    {
+        xSemaphoreGiveFromISR(xTimer14Semaphore, &xHigherPriorityTaskWoken);
+    }
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();
   }
+
   /* USER CODE BEGIN Callback 1 */
 
   /* USER CODE END Callback 1 */

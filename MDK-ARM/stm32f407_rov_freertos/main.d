@@ -49,3 +49,6 @@ stm32f407_rov_freertos\main.o: ../Core/Inc/i2c.h
 stm32f407_rov_freertos\main.o: ../Core/Inc/tim.h
 stm32f407_rov_freertos\main.o: ../Core/Inc/usart.h
 stm32f407_rov_freertos\main.o: ../Core/Inc/gpio.h
+stm32f407_rov_freertos\main.o: ../Source/Inc/move_control.h
+stm32f407_rov_freertos\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+stm32f407_rov_freertos\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h

@@ -1,17 +1,19 @@
 #ifndef MOVE_CONTROL_H
 #define MOVE_CONTROL_H
 
-
 #include "stm32f4xx_hal.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
-struct pid_rov
+
+typedef struct 
 {
     float kp;
     float ki;
     float kd;
-};
+}pid_rov;
 
-struct pid_set
+typedef struct 
 {
     float target_value;         //预期值
     float actual_value;         //实际值
@@ -19,13 +21,13 @@ struct pid_set
     float err_last;             //上一次偏差值
     float integral_value;       //积分值
     float integral_value_limit; //积分值上限
-    struct pid_rov parameter;   //pid参数 kp、ki、kd
+    pid_rov parameter;   //pid参数 kp、ki、kd
     float out_data;             //输出值
     float out_data_limit;       //输出值限幅（正）
     float index;                //变积分指数
     float index_of_err_up;      //误差高于此值后积分指数为0
     float index_of_err_down;    //误差低于此值后积分指数为1
-};
+}pid_set;
 
 typedef struct
 {
@@ -87,12 +89,15 @@ typedef struct
 
 
 extern S_handle handle;
-extern int16_t go_forward_back;
-extern int16_t go_left_right;
-extern int16_t turn_left_right;
+
+extern int16_t go_forward;
+extern int16_t go_left;
+extern int16_t go_up;
+
+extern int16_t move_yaw;
 extern int16_t move_pitch;
-extern int16_t move_row;
-extern int16_t go_up_down;
+extern int16_t move_roll;
+
 
 extern S_light light;
 extern S_mode mode;
@@ -101,14 +106,19 @@ extern S_pid_depth pid_depth;
 
 //初始化各个pid数据结构体
 //为代码简洁方便，用数组表示；分别为俯仰、翻滚、偏航，前后、上下、左右
-extern struct pid_set pid_out_parameter[6];
+extern  pid_set pid_out_parameter[6];
 //8个推进器
-extern struct pid_set pid_in_parameter[8];
-
-extern struct pid_set depth_pid;
-
+extern  pid_set pid_in_parameter[8];
+extern  pid_set depth_pid;
 
 
+/** TIM11 到期信号量，供 PID 线程等待 */
+extern SemaphoreHandle_t xTimer11Semaphore;
+/** TIM14 到期信号量，供 PID 线程等待 */
+extern SemaphoreHandle_t xTimer14Semaphore;
+
+void Move_Control_Task(void *pvParameters);
+void Move_PID_TASK(void *pvParameters);
 
 
 

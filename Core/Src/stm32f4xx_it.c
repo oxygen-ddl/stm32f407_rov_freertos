@@ -22,6 +22,7 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "jy901p_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,16 +52,19 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim11;
 extern DMA_HandleTypeDef hdma_uart5_rx;
 extern DMA_HandleTypeDef hdma_uart5_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma_usart2_rx;
 extern DMA_HandleTypeDef hdma_usart2_tx;
+extern DMA_HandleTypeDef hdma_usart3_rx;
+extern DMA_HandleTypeDef hdma_usart3_tx;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 extern DMA_HandleTypeDef hdma_usart6_tx;
 extern UART_HandleTypeDef huart5;
@@ -187,6 +191,34 @@ void DMA1_Stream0_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream1 global interrupt.
+  */
+void DMA1_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart3_rx);
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream3 global interrupt.
+  */
+void DMA1_Stream3_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream3_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart3_tx);
+  /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream5 global interrupt.
   */
 void DMA1_Stream5_IRQHandler(void)
@@ -215,6 +247,21 @@ void DMA1_Stream6_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles TIM1 trigger and commutation interrupts and TIM11 global interrupt.
+  */
+void TIM1_TRG_COM_TIM11_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
+
+  /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim1);
+  HAL_TIM_IRQHandler(&htim11);
+  /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 1 */
+
+  /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 1 */
+}
+
+/**
   * @brief This function handles USART1 global interrupt.
   */
 void USART1_IRQHandler(void)
@@ -234,6 +281,28 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
+    /* 1) 空闲检测 */
+    if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE))
+    {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart2);
+
+        /* 2) 停 DMA，算长度 */
+        HAL_UART_DMAStop(&huart2);
+        uint16_t len = JY901_RX_BUFFER_SIZE
+                     - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
+
+        /* 3) 打包并投队列 */
+        JY901_Msg_t msg;
+        msg.len = len;
+        memcpy(msg.data, jy901_rx_buffer, len);
+
+        BaseType_t awakened = pdFALSE;
+        xQueueSendFromISR(jy901Queue, &msg, &awakened);
+        portYIELD_FROM_ISR(awakened);
+        //HAL_UART_Transmit_DMA(&huart6, jy901_rx_buffer, len);
+        /* 4) 重启 DMA */
+        HAL_UART_Receive_DMA(&huart2, jy901_rx_buffer, JY901_RX_BUFFER_SIZE);
+    }
 
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);

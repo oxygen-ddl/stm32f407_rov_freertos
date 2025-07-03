@@ -45,7 +45,12 @@ stm32f407_rov_freertos\freertos.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/jy901p_uart.h
+stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
+stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/chat_with_upper.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_iic.h
+stm32f407_rov_freertos\freertos.o: ../Core/Inc/i2c.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/func_uart.h
 stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdbool.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_control.h
+stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h

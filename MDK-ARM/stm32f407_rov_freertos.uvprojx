@@ -600,6 +600,16 @@
               <FileType>5</FileType>
               <FilePath>..\Source\Inc\ms5837_iic.h</FilePath>
             </File>
+            <File>
+              <FileName>move_drv.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Source\Inc\move_drv.h</FilePath>
+            </File>
+            <File>
+              <FileName>ms5837_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Source\Inc\ms5837_uart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -649,6 +659,16 @@
               <FileName>ms5837_iic.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Source\Src\ms5837_iic.c</FilePath>
+            </File>
+            <File>
+              <FileName>move_drv.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\move_drv.c</FilePath>
+            </File>
+            <File>
+              <FileName>ms5837_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\ms5837_uart.c</FilePath>
             </File>
           </Files>
         </Group>

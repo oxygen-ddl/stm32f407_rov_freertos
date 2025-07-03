@@ -47,9 +47,10 @@
 
 #define RX_StartBit_Handle_func_defogging     0xC5
 
-void SendAllPack_TaskInit(void);
-void Parser_StartTask(void);
-
+void parser_feed(uint8_t ch);
+void SendAllPack_Task(void *pvParameters);
+void Parser_Init(void);
+void vParserTask(void *pvParameters);
 
 
 

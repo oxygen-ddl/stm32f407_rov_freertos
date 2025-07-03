@@ -117,27 +117,18 @@ int fgetc(FILE *f)
 /*************************************变量观测**************************************/
 #include "ms5837_iic.h"
 #include "cmsis_os.h"
-
-static osThreadId_t view_variables_TaskHandle;//是 CMSIS-RTOS2 （在 STM32CubeMX/FreeRTOS V10+ 中默认启用）的创建线程接口
-//xTaskCreate()是老版本任务创建
+#include "move_control.h"
+#include "jy901p_uart.h"
+#include "chat_with_upper.h"
 void view_variables_Task(void *argument)
 {
     for (;;)
     {
-        // 发送深度和压力数据
-        UART_SendFloats_DMA(2, ms5837_depth, ms5837_pressure);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        //UART_SendFloats_DMA(3, (float)roll, (float)pitch,(float)yaw);
+        //UART_SendFloats_DMA(9, (float)accx, (float)accy, (float)accz,  (float)angx, (float)angy, (float)angz, (float)roll, (float)pitch, (float)yaw);
+        UART_SendFloats_DMA(6,go_forward, go_left,go_up, move_yaw, move_pitch, move_roll);
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
-void view_variables_StartTask(void)
-{
-    const osThreadAttr_t attr = {
-        .name = "view_variables",
-        .stack_size = 256,
-        .priority = osPriorityLow2,
-    };
-    view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &attr);//调用 MS5837_Task 作为任务入口函数；传入 NULL 作为该任务的参数；用 &attr 里指定的名字、堆栈大小和优先级来创建线程；
-
-}
 

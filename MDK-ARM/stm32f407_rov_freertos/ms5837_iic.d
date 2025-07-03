@@ -33,6 +33,8 @@ stm32f407_rov_freertos\ms5837_iic.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4
 stm32f407_rov_freertos\ms5837_iic.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/i2c.h
+stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/main.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/FreeRTOSConfig.h
@@ -45,7 +47,4 @@ stm32f407_rov_freertos\ms5837_iic.o: ../Middlewares/Third_Party/FreeRTOS/Source/
 stm32f407_rov_freertos\ms5837_iic.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
 stm32f407_rov_freertos\ms5837_iic.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\math.h
-stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/i2c.h
-stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/main.h
 stm32f407_rov_freertos\ms5837_iic.o: ../Core/Inc/usart.h
-stm32f407_rov_freertos\ms5837_iic.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdio.h

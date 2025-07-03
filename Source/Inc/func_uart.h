@@ -9,7 +9,7 @@ bool UART_SendFloats_Blocking(uint8_t count, ...);
 
 
 /*************************************变量观测**************************************/
+void view_variables_Task(void *argument);
 
-void view_variables_StartTask(void);
 
 #endif  /* FUNC_UART_H */

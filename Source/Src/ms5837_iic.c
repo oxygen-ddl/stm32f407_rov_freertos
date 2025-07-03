@@ -4,202 +4,227 @@
 #include <math.h>
 #include "i2c.h"
 #include "usart.h"
-#include "stdio.h"
-/*
-C1  压力灵敏度 SENS|T1
-C2  压力补偿  OFF|T1
-C3  温度压力灵敏度系数 TCS
-C4  温度系数的压力补偿 TCO
-C5  参考温度 T|REF
-C6  温度系数的温度 TEMPSENS
-*/
+#include "FreeRTOS.h"
+#include "task.h"
+float ms5837_depth = 0.0f; // 深度数据
+float ms5837_pressure = 0.0f; // 压力数据
 
-// MS5837-03BA I²C 地址
-#define MS5837_ADDR (0x76 << 1) // 7-bit=0x76, HAL 要求左移1位
+struct MS5837_values_t MS5837_values;
+struct MS5837_t MS5837;
 
-// 命令定义
-#define CMD_RESET 0x1E
-#define CMD_CONVERT_D1 0x48                  // OSR=4096 压力
-#define CMD_CONVERT_D2 0x58                  // OSR=4096 温度
-#define CMD_PROM_READ(i) (0xA0 + ((i) << 1)) // i=1..6
-
-// PROM 校准系数
-static uint16_t C[7]; // C[1]..C[6] 有效
-
-// 任务句柄
-static osThreadId_t ms5837TaskHandle;
-
-// 计算得到的全局传感器数据
-float ms5837_temperature; // °C
-float ms5837_pressure;    // mbar
-float ms5837_depth;       // m
-
-// 内部使用变量
-static int32_t dT;
-static int64_t OFF, SENS;
-
-// 前向声明
-static void MS5837_Reset(void);
-static HAL_StatusTypeDef MS5837_ReadPROM(void);
-static HAL_StatusTypeDef MS5837_ReadADC(uint32_t cmd, uint32_t *adc);
-static void MS5837_Compensate(uint32_t D1, uint32_t D2);
-
-/**
- * @brief   MS5837 驱动初始化（在 FreeRTOS 启动前调用即可）
- */
-void MS5837_Init(void)
+static void I2C_send(uint8_t addr, I2C_HandleTypeDef *i2c_channel)
 {
-    // 1. 复位
-    MS5837_Reset();
-    vTaskDelay(pdMS_TO_TICKS(20));
-    // 2. 读取 PROM 校准系数
-    if (MS5837_ReadPROM() != HAL_OK)
+    HAL_I2C_Master_Transmit(i2c_channel, MS5837_ADDR << 1, &addr, 1, 100);
+}
+
+// static int8_t I2C_read8(uint8_t addr, I2C_HandleTypeDef *i2c_channel)
+// {
+//     uint8_t data = 0;
+//     HAL_I2C_Master_Transmit(i2c_channel, MS5837_ADDR << 1, &addr, 1, 100);
+//     vTaskDelay(pdMS_TO_TICKS(20));   
+//     HAL_I2C_Master_Receive(i2c_channel, MS5837_ADDR << 1, &data, 1, 100);
+//     return data;
+// }
+
+static int16_t I2C_read16(uint8_t addr, I2C_HandleTypeDef *i2c_channel)
+{
+    uint8_t dataArr[2] = {0, 0};
+    HAL_I2C_Mem_Read(i2c_channel, (uint16_t)(MS5837_ADDR << 1),  addr, I2C_MEMADD_SIZE_8BIT, dataArr, 2, 100);
+    uint16_t data = (dataArr[0] << 8) | dataArr[1];
+    return data;
+}
+
+static int32_t I2C_read32(uint8_t addr, I2C_HandleTypeDef *i2c_channel)
+{
+    uint8_t dataArr[4] = {0, 0, 0, 0};
+    HAL_I2C_Mem_Read(i2c_channel, (uint16_t)(MS5837_ADDR << 1), addr, I2C_MEMADD_SIZE_8BIT, dataArr, 4, 100);
+    uint32_t data = (dataArr[0] << 24) | (dataArr[1] << 16) | (dataArr[2] << 8) | dataArr[3];
+    return data;
+}
+
+static uint8_t crc4(uint16_t n_prom[])
+{
+    uint16_t n_rem = 0;
+
+    n_prom[0] = ((n_prom[0]) & 0x0FFF);
+    n_prom[7] = 0;
+
+    for (uint8_t i = 0; i < 16; i++)
     {
-        // TODO: 错误处理
-        HAL_UART_Transmit_DMA(&huart6, (uint8_t *)"MS5837 PROM read error!\n", 24);
-        printf("MS5837 PROM: C1=%04X, C2=%04X, C3=%04X, C4=%04X, C5=%04X, C6=%04X\n",
-               C[1], C[2], C[3], C[4], C[5], C[6]);
+        if (i % 2 == 1)
+        {
+            n_rem ^= (uint16_t)((n_prom[i >> 1]) & 0x00FF);
+        }
+        else
+        {
+            n_rem ^= (uint16_t)(n_prom[i >> 1] >> 8);
+        }
+        for (uint8_t n_bit = 8; n_bit > 0; n_bit--)
+        {
+            if (n_rem & 0x8000)
+            {
+                n_rem = (n_rem << 1) ^ 0x3000;
+            }
+            else
+            {
+                n_rem = (n_rem << 1);
+            }
+        }
     }
-    printf("MS5837 PROM: C1=%04X, C2=%04X, C3=%04X, C4=%04X, C5=%04X, C6=%04X\n",
-           C[1], C[2], C[3], C[4], C[5], C[6]);
+
+    n_rem = ((n_rem >> 12) & 0x000F);
+
+    return n_rem ^ 0x00;
+}
+
+static void calculate()
+{
+
+    int32_t dT = 0;
+    int64_t SENS = 0;
+    int64_t OFF = 0;
+    int32_t SENSi = 0;
+    int32_t OFFi = 0;
+    int32_t Ti = 0;
+    int64_t OFF2 = 0;
+    int64_t SENS2 = 0;
+
+    dT = MS5837_values.D2 - (uint32_t)MS5837_values.C[5] * 256l;
+    if (MS5837.model)
+    {
+        SENS = (int64_t)MS5837_values.C[1] * 65536l + ((int64_t)MS5837_values.C[3] * dT) / 128l;
+        OFF = (int64_t)MS5837_values.C[2] * 131072l + ((int64_t)MS5837_values.C[4] * dT) / 64l;
+        MS5837_values.P = (MS5837_values.D1 * SENS / (2097152l) - OFF) / (32768l);
+    }
+    else
+    {
+        SENS = (int64_t)MS5837_values.C[1] * 32768l + ((int64_t)MS5837_values.C[3] * dT) / 256l;
+        OFF = (int64_t)MS5837_values.C[2] * 65536l + ((int64_t)MS5837_values.C[4] * dT) / 128l;
+        MS5837_values.P = (MS5837_values.D1 * SENS / (2097152l) - OFF) / (8192l);
+    }
+
+    MS5837_values.TEMP = 2000l + (int64_t)dT * MS5837_values.C[6] / 8388608LL;
+
+    if (MS5837.model)
+    {
+        if ((MS5837_values.TEMP / 100) < 20)
+        {
+            Ti = (11 * (int64_t)dT * (int64_t)dT) / (34359738368LL);
+            OFFi = (31 * (MS5837_values.TEMP - 2000) * (MS5837_values.TEMP - 2000)) / 8;
+            SENSi = (63 * (MS5837_values.TEMP - 2000) * (MS5837_values.TEMP - 2000)) / 32;
+        }
+    }
+    else
+    {
+        if ((MS5837_values.TEMP / 100) < 20)
+        {
+            Ti = (3 * (int64_t)dT * (int64_t)dT) / (8589934592LL);
+            OFFi = (3 * (MS5837_values.TEMP - 2000) * (MS5837_values.TEMP - 2000)) / 2;
+            SENSi = (5 * (MS5837_values.TEMP - 2000) * (MS5837_values.TEMP - 2000)) / 8;
+            if ((MS5837_values.TEMP / 100) < -15)
+            {
+                OFFi = OFFi + 7 * (MS5837_values.TEMP + 1500l) * (MS5837_values.TEMP + 1500l);
+                SENSi = SENSi + 4 * (MS5837_values.TEMP + 1500l) * (MS5837_values.TEMP + 1500l);
+            }
+        }
+        else if ((MS5837_values.TEMP / 100) >= 20)
+        {
+            Ti = 2 * (dT * dT) / (137438953472LL);
+            OFFi = (1 * (MS5837_values.TEMP - 2000) * (MS5837_values.TEMP - 2000)) / 16;
+            SENSi = 0;
+        }
+    }
+
+    OFF2 = OFF - OFFi;
+    SENS2 = SENS - SENSi;
+
+    if (MS5837.model)
+    {
+        MS5837_values.TEMP = (MS5837_values.TEMP - Ti);
+        MS5837_values.P = (((MS5837_values.D1 * SENS2) / 2097152l - OFF2) / 32768l) / 100;
+    }
+    else
+    {
+        MS5837_values.TEMP = (MS5837_values.TEMP - Ti);
+        MS5837_values.P = (((MS5837_values.D1 * SENS2) / 2097152l - OFF2) / 8192l) / 10;
+    }
+
+    MS5837.temperture = MS5837_values.TEMP / 100.0f;
+    MS5837.pressure = MS5837_values.P * 1.0f;
+#ifdef Pa
+    MS5837.pressure = MS5837_values.P * 100.0f;
+#endif
+#ifdef bar
+    MS5837.pressure = MS5837_values.P * 0.001f;
+#endif
+}
+
+uint8_t MS5837_init(I2C_HandleTypeDef *i2c_channel)
+{
+    MS5837.fluidDensity = 1029;
+    MS5837.model = MS5837_30BA;
+
+    I2C_send(MS5837_RESET, i2c_channel);
+    HAL_Delay(10);
+
+    for (uint8_t i = 0; i < 7; i++)
+    {
+        MS5837_values.C[i] = I2C_read16(MS5837_PROM_READ + (i * 2), i2c_channel);
+        HAL_Delay(20);
+    }
+    uint8_t crcRead = MS5837_values.C[0] >> 12;
+    uint8_t crcCalculated = crc4(MS5837_values.C);
+
+    if (crcCalculated == crcRead)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+void MS5837_read(I2C_HandleTypeDef *i2c_channel)
+{
+    I2C_send(MS5837_CONVERT_D1_8192, i2c_channel);
+    vTaskDelay(pdMS_TO_TICKS(20));   
+
+    MS5837_values.D1 = I2C_read32(MS5837_ADC_READ, i2c_channel);
+    MS5837_values.D1 = MS5837_values.D1 >> 8;
+    vTaskDelay(pdMS_TO_TICKS(20));   
+    I2C_send(MS5837_CONVERT_D2_8192, i2c_channel);
+    vTaskDelay(pdMS_TO_TICKS(20));   
+
+    MS5837_values.D2 = I2C_read32(MS5837_ADC_READ, i2c_channel);
+    MS5837_values.D2 = MS5837_values.D2 >> 8;
+
+    calculate();
+}
+
+float depth()
+{
+    return (MS5837.pressure * 100.0f - 101300) / (MS5837.fluidDensity * 9.80665f);
+}
+
+float altitude()
+{
+    return (1 - pow((MS5837.pressure / 1013.25f), .190284f)) * 145366.45f * .3048f;
 }
 
 /**
  * @brief   MS5837 循环任务
  */
-static void MS5837_Task(void *argument)
+void MS5837_Task(void *argument)
 {
-    uint32_t D1, D2;
-
-    (void)argument;
     for (;;)
     {
-        // 1. 发起压力转换，读取 ADC
-        MS5837_ReadADC(CMD_CONVERT_D1, &D1);
-        // 2. 发起温度转换，读取 ADC
-        MS5837_ReadADC(CMD_CONVERT_D2, &D2);
 
-        // 3. 补偿计算
-        MS5837_Compensate(D1, D2);
+        MS5837_read(&hi2c2);
 
-        // 4. 暂停 200 ms（可根据实际需求调整）
+        ms5837_depth = depth();
+
+        ms5837_pressure = MS5837.pressure;
+
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
-/**
- * @brief   启动一个 FreeRTOS 任务，周期读取并计算传感器数据
- */
-void MS5837_StartTask(void)
-{
-    MS5837_Init(); // 初始化传感器
-    const osThreadAttr_t attr = {
-        .name = "ms5837",
-        .stack_size = 512,
-        .priority = (osPriority_t) osPriorityLow1,
-    };
-    ms5837TaskHandle = osThreadNew(MS5837_Task, NULL, &attr);
-}
-
-/** @name   低级 I²C 操作封装
-    @{ */
-
-/**
- * @brief   发送复位命令
- */
-static void MS5837_Reset(void)
-{
-    HAL_I2C_Master_Transmit(&hi2c2, MS5837_ADDR, (uint8_t[]){CMD_RESET}, 1, HAL_MAX_DELAY);
-}
-
-/**
- * @brief   读取 PROM 中的 6 组校准值
- */
-static HAL_StatusTypeDef MS5837_ReadPROM(void)
-{
-    HAL_StatusTypeDef res;
-    for (uint8_t i = 1; i <= 6; i++)
-    {
-        uint8_t buf[2];
-        res = HAL_I2C_Mem_Read(&hi2c2, MS5837_ADDR, CMD_PROM_READ(i), I2C_MEMADD_SIZE_8BIT, buf, 2, 50);
-        if (res != HAL_OK)
-            return res;
-        C[i] = (buf[0] << 8) | buf[1];
-    }
-    return HAL_OK;
-}
-
-/**
- * @brief   发起一次转换并读取 ADC
- * @param   cmd   转换命令（CMD_CONVERT_D1 / CMD_CONVERT_D2）
- * @param   adc   接收返回的 24bit 原始值指针
- */
-static HAL_StatusTypeDef MS5837_ReadADC(uint32_t cmd, uint32_t *adc)
-{
-    HAL_StatusTypeDef res;
-    uint8_t raw[3];
-
-    // 1) 发起转换
-    res = HAL_I2C_Master_Transmit(&hi2c2, MS5837_ADDR, (uint8_t[]){(uint8_t)cmd}, 1, HAL_MAX_DELAY);
-    if (res != HAL_OK)
-        return res;
-
-    // 2) 等待最大转换时间约 10ms
-    vTaskDelay(pdMS_TO_TICKS(10));
-
-    // 3) 读 ADC 寄存器（0x00）
-    res = HAL_I2C_Master_Transmit(&hi2c2, MS5837_ADDR, (uint8_t[]){0x00}, 1, HAL_MAX_DELAY);
-    if (res != HAL_OK)
-        return res;
-    res = HAL_I2C_Master_Receive(&hi2c2, MS5837_ADDR, raw, 3, HAL_MAX_DELAY);
-    if (res != HAL_OK)
-        return res;
-
-    // 24 位拼接
-    *adc = (uint32_t)raw[0] << 16 | (uint32_t)raw[1] << 8 | raw[2];
-    return HAL_OK;
-}
-/** @} */
-
-/**
- * @brief   一阶／二阶补偿计算
- * @param   D1  原始压力 ADC
- * @param   D2  原始温度 ADC
- */
-static void MS5837_Compensate(uint32_t D1, uint32_t D2)
-{
-    int64_t OFF2 = 0, SENS2 = 0;
-
-    // dT = D2 - C5 × 2^8
-    dT = (int32_t)D2 - ((int32_t)C[5] << 8);
-
-    // TEMP = 20°C + dT × C6 / 2^23
-    ms5837_temperature = 2000 + ((int64_t)dT * C[6]) / 8388608;
-    // 初步 OFF / SENS
-    OFF = ((int64_t)C[2] << 16) + ((int64_t)C[4] * dT >> 7);
-    SENS = ((int64_t)C[1] << 15) + ((int64_t)C[3] * dT >> 8);
-
-    // 二阶补偿
-    if (ms5837_temperature < 2000)
-    {
-        int64_t t = ms5837_temperature - 2000;
-        OFF2 = (3 * (t * t)) >> 1;
-        SENS2 = (5 * (t * t)) >> 3;
-        if (ms5837_temperature < -1500)
-        {
-            int64_t tt = ms5837_temperature + 1500;
-            OFF2 += 7 * (tt * tt);
-            SENS2 += (11 * (tt * tt)) >> 1;
-        }
-    }
-
-    OFF -= OFF2;
-    SENS -= SENS2;
-
-    // 计算最终压力（单位 mbar）
-    // Pressure = (D1 × SENS / 2^21 - OFF) / 2^15
-    ms5837_pressure = (((D1 * SENS) >> 21) - OFF) / 32768.0f / 100;
-
-    // 根据水的密度计算深度（单位 m，ρ≈1029kg/m³，g≈9.8）
-    ms5837_depth = (ms5837_pressure - /*大气压*/ 1013.25f) * 100.0f / (1029.0f * 9.8f);
-}

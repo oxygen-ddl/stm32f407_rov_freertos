@@ -12,6 +12,10 @@
         "distance_measure.h": "c",
         "mx5837_iic.h": "c",
         "usart.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "ms5837_iic.h": "c",
+        "cmsis_os.h": "c",
+        "move_control.h": "c",
+        "message_buffer.h": "c"
     }
 }

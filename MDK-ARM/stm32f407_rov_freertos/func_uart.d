@@ -40,6 +40,7 @@ stm32f407_rov_freertos\func_uart.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMComp
 stm32f407_rov_freertos\func_uart.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
 stm32f407_rov_freertos\func_uart.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdio.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/ms5837_iic.h
+stm32f407_rov_freertos\func_uart.o: ../Core/Inc/i2c.h
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 stm32f407_rov_freertos\func_uart.o: ../Core/Inc/FreeRTOSConfig.h
@@ -51,3 +52,8 @@ stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/i
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/move_control.h
+stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/jy901p_uart.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/chat_with_upper.h

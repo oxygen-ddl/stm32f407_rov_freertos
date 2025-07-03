@@ -29,6 +29,8 @@
 #include "chat_with_upper.h"
 #include "ms5837_iic.h"
 #include "func_uart.h"
+#include "move_control.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,6 +50,48 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+osThreadId_t view_variables_TaskHandle; // 变量观测任务句柄
+osThreadId_t SendAllPack_TaskHandle; // 发送任务句柄
+osThreadId_t Parser_TaskHandle; // 解析任务句柄
+osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
+osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
+osThreadId_t MS5837_IIC_TaskHandle; // MS5837 IIC任务句柄
+
+const osThreadAttr_t view_variables_attributes = {
+  .name = "view_variables",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+
+const osThreadAttr_t SendAllPack_attributes = {
+  .name = "SendAllPack",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
+
+const osThreadAttr_t Parser_attributes = {
+  .name = "Parser",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow4,
+};
+
+const osThreadAttr_t Jy901p_Uart_attributes = {
+  .name = "Jy901p_Uart",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow2,
+};
+
+const osThreadAttr_t Move_Control_attributes = {
+  .name = "Move_Control",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow4,
+};
+
+const osThreadAttr_t MS5837_IIC_attributes = {
+  .name = "MS5837_IIC",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow1,
+};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -57,12 +101,12 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for cycle_led */
-osThreadId_t cycle_ledHandle;
-const osThreadAttr_t cycle_led_attributes = {
-  .name = "cycle_led",
+/* Definitions for Cycle_led */
+osThreadId_t Cycle_ledHandle;
+const osThreadAttr_t Cycle_led_attributes = {
+  .name = "Cycle_led",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow1,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -71,26 +115,9 @@ const osThreadAttr_t cycle_led_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartTask02(void *argument);
+void Cycle_led_Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
-
-/* Hook prototypes */
-void configureTimerForRunTimeStats(void);
-unsigned long getRunTimeCounterValue(void);
-
-/* USER CODE BEGIN 1 */
-/* Functions needed when configGENERATE_RUN_TIME_STATS is on */
-__weak void configureTimerForRunTimeStats(void)
-{
-
-}
-
-__weak unsigned long getRunTimeCounterValue(void)
-{
-return 0;
-}
-/* USER CODE END 1 */
 
 /**
   * @brief  FreeRTOS initialization
@@ -99,6 +126,11 @@ return 0;
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
+
+  Parser_Init(); // 初始化解析器
+  JY901_UART_Init(); // 启动jy901p DMA空闲检测
+  Move_Control_Task(NULL); // 启动推进器控制任务
+  //MS5837_init(&hi2c2);     // 初始化传感器
 
   /* USER CODE END Init */
 
@@ -122,21 +154,23 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of cycle_led */
-  cycle_ledHandle = osThreadNew(StartTask02, NULL, &cycle_led_attributes);
+  /* creation of Cycle_led */
+  Cycle_ledHandle = osThreadNew(Cycle_led_Task, NULL, &Cycle_led_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+
+  //Move_Control_TaskHandle = osThreadNew(Move_PID_TASK, NULL, &Move_Control_attributes); // 启动推进器控制任务
+
+  Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
   
-  jy901p_uart_init(); //加入jy901p_uart_init函数，初始化jy901p的UART通信
-  
-  SendAllPack_TaskInit(); //加入发送任务的初始化函数，创建发送任务
+  SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送任务 
 
-  Parser_StartTask(); //加入解析器初始化函数，创建解析器任务和队列
+  Parser_TaskHandle = osThreadNew(vParserTask, NULL, &Parser_attributes); // 启动解析任务
 
-  MS5837_StartTask(); //加入MS5837传感器任务的初始化函数，创建传感器任务
+  //MS5837_IIC_TaskHandle = osThreadNew(MS5837_Task, NULL, &MS5837_IIC_attributes); // 启动MS5837 IIC任务
 
-  view_variables_StartTask(); //加入变量观测任务的初始化函数，创建变量观测任务
+  view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
   /* USER CODE END RTOS_THREADS */
 
@@ -164,23 +198,23 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartTask02 */
+/* USER CODE BEGIN Header_Cycle_led_Task */
 /**
-* @brief Function implementing the cycle_led thread.
+* @brief Function implementing the Cycle_led thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_StartTask02 */
-void StartTask02(void *argument)
+/* USER CODE END Header_Cycle_led_Task */
+void Cycle_led_Task(void *argument)
 {
-  /* USER CODE BEGIN StartTask02 */
+  /* USER CODE BEGIN Cycle_led_Task */
   /* Infinite loop */
   for(;;)
   {
-		HAL_GPIO_TogglePin(GPIOE,GPIO_PIN_2); // Toggle the LED on PE2
     osDelay(500);
+    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2); // 切换LED状态
   }
-  /* USER CODE END StartTask02 */
+  /* USER CODE END Cycle_led_Task */
 }
 
 /* Private application code --------------------------------------------------*/
