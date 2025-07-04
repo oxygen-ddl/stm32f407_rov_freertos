@@ -33,3 +33,6 @@ stm32f407_rov_freertos\ms5837_uart.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f
 stm32f407_rov_freertos\ms5837_uart.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 stm32f407_rov_freertos\ms5837_uart.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 stm32f407_rov_freertos\ms5837_uart.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+stm32f407_rov_freertos\ms5837_uart.o: ../Core/Inc/usart.h
+stm32f407_rov_freertos\ms5837_uart.o: ../Core/Inc/main.h
+stm32f407_rov_freertos\ms5837_uart.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h

@@ -46,11 +46,10 @@ stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/So
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\chat_with_upper.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/transmit_power_board.h
-stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/ms5837_iic.h
-stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/i2c.h
-stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/main.h
+stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/distance_measure.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/ath20_bmp280.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/move_control.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/usart.h
+stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/main.h

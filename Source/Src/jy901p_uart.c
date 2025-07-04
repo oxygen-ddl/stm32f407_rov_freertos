@@ -147,29 +147,31 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
                     rawH = p[9];
                     rawL = p[8];
                     version = (rawH << 8) | rawL;
-
-                    pitch -= pitch_start;
-                    roll -= roll_start;
-                    yaw -= yaw_start;
+                    // roll = 360-roll;
+                    // yaw = 360-yaw;
+                    // pitch -= pitch_start;
+                    // roll -= roll_start;
+                    //! pitch于roll 角色对调
+                    yaw  = -yaw;
 
                     if (roll - roll_last > 270)
                     {
-                        turns_of_roll -= 1;
+                        turns_of_roll += 1;
                     }
                     else if (roll - roll_last < -270)
                     {
-                        turns_of_roll += 1;
+                        turns_of_roll -= 1;
                     }
                     roll_total = roll + turns_of_roll * 360;
 
 
                     if (pitch - pitch_last > 270)
                     {
-                        turns_of_pitch -= 1;
+                        turns_of_pitch += 1;
                     }
                     else if (pitch - pitch_last < -270)
                     {
-                        turns_of_pitch += 1;
+                        turns_of_pitch -= 1;
                     }
                     pitch_total = pitch + turns_of_pitch * 360;
 
@@ -184,6 +186,9 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
                     }
                     yaw_total = yaw + turns_of_yaw * 360;
 
+                    roll_last = roll;
+                    pitch_last = pitch;
+                    yaw_last = yaw;
 
                     if (yaw_flag == 0)
                     {

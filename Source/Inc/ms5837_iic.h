@@ -4,8 +4,8 @@
 #include "stm32f4xx_hal.h"
 #include "i2c.h"
 
-extern float ms5837_depth; // 深度数据
-extern float ms5837_pressure; // 压力数据
+//extern float ms5837_depth; // 深度数据
+//extern float ms5837_pressure; // 压力数据
 
 
 //Definitions:

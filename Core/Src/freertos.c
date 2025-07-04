@@ -30,7 +30,9 @@
 #include "ms5837_iic.h"
 #include "func_uart.h"
 #include "move_control.h"
-
+#include "ms5837_uart.h"
+#include "move_drv.h"
+#include "ath20_bmp280.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,10 +54,10 @@
 /* USER CODE BEGIN Variables */
 osThreadId_t view_variables_TaskHandle; // 变量观测任务句柄
 osThreadId_t SendAllPack_TaskHandle; // 发送任务句柄
-osThreadId_t Parser_TaskHandle; // 解析任务句柄
 osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
 osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
 osThreadId_t MS5837_IIC_TaskHandle; // MS5837 IIC任务句柄
+osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
 
 const osThreadAttr_t view_variables_attributes = {
   .name = "view_variables",
@@ -69,12 +71,6 @@ const osThreadAttr_t SendAllPack_attributes = {
   .priority = (osPriority_t) osPriorityLow3,
 };
 
-const osThreadAttr_t Parser_attributes = {
-  .name = "Parser",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow4,
-};
-
 const osThreadAttr_t Jy901p_Uart_attributes = {
   .name = "Jy901p_Uart",
   .stack_size = 128 * 4,
@@ -83,14 +79,20 @@ const osThreadAttr_t Jy901p_Uart_attributes = {
 
 const osThreadAttr_t Move_Control_attributes = {
   .name = "Move_Control",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityLow4,
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 const osThreadAttr_t MS5837_IIC_attributes = {
   .name = "MS5837_IIC",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow1,
+};
+
+const osThreadAttr_t ath20_bmp280_attributes = {
+  .name = "Ath20_Bmp280",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 /* USER CODE END Variables */
@@ -129,8 +131,9 @@ void MX_FREERTOS_Init(void) {
 
   Parser_Init(); // 初始化解析器
   JY901_UART_Init(); // 启动jy901p DMA空闲检测
-  Move_Control_Task(NULL); // 启动推进器控制任务
-  //MS5837_init(&hi2c2);     // 初始化传感器
+  //Move_Control_Task(NULL); // 启动推进器控制任务
+  Parser4_Init(); // 启动MS5837 UART解析任务
+  Move_basic_Init();
 
   /* USER CODE END Init */
 
@@ -160,18 +163,18 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  //Move_Control_TaskHandle = osThreadNew(Move_PID_TASK, NULL, &Move_Control_attributes); // 启动推进器控制任务
+  Move_Control_TaskHandle = osThreadNew(upper_move_process, NULL, &Move_Control_attributes); // 启动推进器控制任务
 
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
   
   SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送任务 
 
-  Parser_TaskHandle = osThreadNew(vParserTask, NULL, &Parser_attributes); // 启动解析任务
 
   //MS5837_IIC_TaskHandle = osThreadNew(MS5837_Task, NULL, &MS5837_IIC_attributes); // 启动MS5837 IIC任务
 
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
+  Ath20_Bmp280_TaskHandle = osThreadNew(Sensors_Task, NULL, &ath20_bmp280_attributes); // 启动循环LED任务
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

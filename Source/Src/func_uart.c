@@ -120,13 +120,18 @@ int fgetc(FILE *f)
 #include "move_control.h"
 #include "jy901p_uart.h"
 #include "chat_with_upper.h"
+#include "ms5837_uart.h"
+#include "ath20_bmp280.h"
 void view_variables_Task(void *argument)
 {
     for (;;)
     {
         //UART_SendFloats_DMA(3, (float)roll, (float)pitch,(float)yaw);
         //UART_SendFloats_DMA(9, (float)accx, (float)accy, (float)accz,  (float)angx, (float)angy, (float)angz, (float)roll, (float)pitch, (float)yaw);
-        UART_SendFloats_DMA(6,go_forward, go_left,go_up, move_yaw, move_pitch, move_roll);
+        //UART_SendFloats_DMA(6,(float)go_forward, (float)go_left,(float)go_up,(float) move_yaw,(float) move_pitch, (float)move_roll);
+        //UART_SendFloats_DMA(2,ms5837_temperature, ms5837_depth);
+        //UART_SendFloats_DMA(4, (float)bmp280_pressure, (float)bmp280_temperature, (float)ath20_humidity, (float)ath20_temperature);
+        UART_SendFloats_DMA(3,pitch_total,roll_total,yaw_total);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

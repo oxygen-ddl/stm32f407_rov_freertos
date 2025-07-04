@@ -1,7 +1,7 @@
 #include "chat_with_upper.h"
 #include "jy901p_uart.h"
 #include "transmit_power_board.h"
-#include "ms5837_iic.h"
+#include "ms5837_uart.h"
 #include "distance_measure.h"
 #include "ath20_bmp280.h"
 #include "move_control.h"
@@ -107,7 +107,7 @@ void data_packup(uint8_t startbit)
         conv[0].value = bmp280_pressure;
         conv[1].value = bmp280_temperature;
         conv[2].value = ath20_humidity;
-        conv[3].value = ath20_tremperature;
+        conv[3].value = ath20_temperature;
 
         float_pack(4, 16, TX_StartBit_TEM_WET, buf, conv);
         HAL_UART_Transmit(&huart3, buf, 20, 100); // 发送数据包到上位机
@@ -192,202 +192,84 @@ float float_convert(uint8_t a[], int start, int end)
 
 /*************************************************************************** */
 
-/* 一帧最大负载长度 */
-#define PARSER_MAX_PAYLOAD 128
 
-/* 状态机状态 */
-typedef enum
-{
-    S_SYNC,
-    S_ID,
-    S_LEN,
-    S_BODY,
-    S_CHK
-} ParserState_t;
+#include "queue.h"
+#include "string.h"     // memcpy
 
-/* “帧”结构，用队列传给处理任务 */
-typedef struct
-{
-    uint8_t id;
-    uint8_t len;
-    uint8_t payload[PARSER_MAX_PAYLOAD];
-} Frame_t;
-
-/* FreeRTOS 对象 */
-static QueueHandle_t xFrameQueue;
-
-/* 状态机上下文（static 只在本文件） */
-static ParserState_t state = S_SYNC;
-static uint8_t cur_id;
-static uint8_t cur_len;
-static uint8_t body_idx;
-static uint8_t checksum;
-static uint8_t body_buf[PARSER_MAX_PAYLOAD];
-
-/* ISR 或 Rx 回调里，每收到一个字节就喂给它 */
-void parser_feed(uint8_t ch)
-{
-    switch (state)
-    {
-    case S_SYNC:
-        if (ch == 0xFF)
-
-        {
-            checksum = ch;
-            state = S_ID;
-        }
-        break;
-
-    case S_ID:
-        cur_id = ch;
-        checksum += ch;
-        state = S_LEN;
-        break;
-
-    case S_LEN:
-        cur_len = ch;
-        checksum += ch;
-        if (cur_len > PARSER_MAX_PAYLOAD)
-        {
-            /* 长度非法，丢弃 */
-            state = S_SYNC;
-        }
-        else
-        {
-            body_idx = 0;
-            state = (cur_len > 0 ? S_BODY : S_CHK);
-        }
-        break;
-
-    case S_BODY:
-        body_buf[body_idx++] = ch;
-        checksum += ch;
-        if (body_idx >= cur_len)
-            state = S_CHK;
-        break;
-
-    case S_CHK:
-        if ((uint8_t)(checksum & 0xFF) == ch)
-        {
-            /* 校验通过，把一帧投递到队列 */
-            Frame_t frame;
-            frame.id = cur_id;
-            frame.len = cur_len;
-            memcpy(frame.payload, body_buf, frame.len);
-            BaseType_t woken = pdFALSE;
-            xQueueSendFromISR(xFrameQueue, &frame, &woken);
-            portYIELD_FROM_ISR(woken);
-        }
-        /* 无论成功或失败，都重新回到 SYNC */
-        state = S_SYNC;
-        break;
-    }
-}
-static inline int16_t int16_from_le(const uint8_t *b, int idx)
-{
-    return (int16_t)((uint16_t)b[idx + 1] << 8 | b[idx]);
-}
+uint8_t dma_rx_buf[PARSER_DMA_BUF_SIZE]; // DMA 接收缓冲区
 /* 真正做 unpack 的任务 */
-void vParserTask(void *pvParameters)
+/* 解析并处理一帧数据 */
+void parsePacket(uint8_t *buf, uint16_t len)
 {
-    Frame_t frame_process;
-    for (;;)
+    if (len < 4) return;              // 至少要有头、ID、LEN、CHK
+    if (buf[0] != 0xFF) return;       // 帧头不对
+    uint8_t id  = buf[1];
+    uint8_t N   = buf[2];
+    if (3 + N + 1 > len) return;      // 数据不全，丢弃
+    // 计算校验和
+    uint8_t sum = 0;
+    for (int i = 0; i < 3 + N; i++)
+        sum += buf[i];
+    if (sum != buf[3 + N]) return;    // 校验失败
+
+    uint8_t *p = buf + 3;             // 指向载荷起始
+    // 根据 ID 一次性解析
+    switch (id)
     {
-        /* 阻塞直到有一帧到来 */
-        if (xQueueReceive(xFrameQueue, &frame_process, portMAX_DELAY) == pdTRUE)
+    case RX_StartBit_Handle_basic: // 0xB1, N == 12
+        handle.go    = (int16_t)((p[1]<<8)|p[0]);
+        handle.move  = (int16_t)((p[3]<<8)|p[2]);
+        handle.up    = (int16_t)((p[5]<<8)|p[4]);
+        handle.yaw   = (int16_t)((p[7]<<8)|p[6]);
+        handle.pitch = (int16_t)((p[9]<<8)|p[8]);
+        handle.roll  = (int16_t)((p[11]<<8)|p[10]);
+        // 更新外部变量
+        go_forward = handle.go;
+        go_left    = handle.move;
+        go_up      = handle.up;
+        move_yaw   = handle.yaw;
+        move_pitch = handle.pitch;
+        move_roll  = handle.roll;
+        break;
+
+    case RX_StartBit_Handle_light: // 0xA2, N == 2
+        light.on = (int16_t)((p[1]<<8)|p[0]);
+        mode.lockangle = (int16_t)((p[3]<<8)|p[2]);
+        mode.unknow = (int16_t)((p[5]<<8)|p[4]);
+        mode.autotrip = (int16_t)((p[7]<<8)|p[6]);
+        mode.defogging = (int16_t)((p[9]<<8)|p[8]);
+        mode.electromagnet = (int16_t)((p[11]<<8)|p[10]);
+        mode.push_rod = (int16_t)((p[13]<<8)|p[12]);
+        mode.autovertical = (int16_t)((p[15]<<8)|p[14]);
+
+        break;
+
+    case RX_StartBit_PID: // 0xC1, N == 6*2*2 + ... 根据协议
+        // 示例：第一个 float 占 4 字节，依次解析...
+        for (uint8_t i = 0; i < 8; i++)
         {
-            switch (frame_process.id)
-            {
-            case RX_StartBit_Handle_basic: // 0xB1 字节数为18，6*2+4
-                handle.go = int16_convert(frame_process.payload, 0, 1);
-                handle.move = int16_convert(frame_process.payload, 2, 3);
-                handle.up = int16_convert(frame_process.payload, 4, 5);
-
-                handle.yaw = int16_convert(frame_process.payload, 6, 7);
-                handle.pitch = int16_convert(frame_process.payload, 8, 9);
-                handle.roll = int16_convert(frame_process.payload, 10, 11);
-
-                // 平移数据
-                go_forward = handle.go;
-                go_left = handle.move;
-                go_up = handle.up;
-
-                // 角度数据
-                move_yaw = handle.yaw;
-                move_pitch = handle.pitch;
-                move_roll = handle.roll;
-
-                break;
-
-            case RX_StartBit_Handle_light:
-                light.on = uint16_convert(frame_process.payload, 0, 1);
-            case RX_StartBit_Handle_func_lockangle:
-                mode.lockangle = uint16_convert(frame_process.payload, 0, 1);
-                break;
-            case RX_StartBit_Handle_func_start_move:
-                mode.autotrip = uint16_convert(frame_process.payload, 0, 1);
-                break;
-            case RX_StartBit_Handle_func_autotrip:
-                mode.autovertical = uint16_convert(frame_process.payload, 0, 1);
-                break;
-            case RX_StartBit_Handle_func_electromagnet:
-                mode.electromagnet = uint16_convert(frame_process.payload, 0, 1);
-                break;
-            case RX_StartBit_Handle_func_push_rod:
-                mode.push_rod = uint16_convert(frame_process.payload, 0, 1);
-                break;
-            case RX_StartBit_Handle_func_autorolling:
-                mode.autorolling = uint16_convert(frame_process.payload, 0, 1);
-                break;
-
-            case RX_StartBit_PID:
-            {
-                // 1) 解析 8 路输入 PID
-                for (uint8_t u = 0; u < 8; ++u)
-                {
-                    pid_in_parameter[u].parameter.kp = float_convert(frame_process.payload, 0, 3);
-                    pid_in_parameter[u].parameter.ki = float_convert(frame_process.payload, 4, 7);
-                    pid_in_parameter[u].parameter.kd = float_convert(frame_process.payload, 8, 11);
-                }
-                // 2) 解析 6 路输出 PID
-                for (uint8_t i = 0; i < 6; ++i)
-                {
-
-                    pid_out_parameter[i].parameter.kp = float_convert(frame_process.payload, i * 12 + 0, i * 12 + 3);
-                    pid_out_parameter[i].parameter.ki = float_convert(frame_process.payload, i * 12 + 4, i * 12 + 7);
-                    pid_out_parameter[i].parameter.kd = float_convert(frame_process.payload, i * 12 + 8, i * 12 + 11);
-                }
-                // 3) 解析 深度 PID
-                pid_depth.kp = float_convert(frame_process.payload, 84, 90);
-                pid_depth.ki = float_convert(frame_process.payload, 91, 94);
-                pid_depth.kd = float_convert(frame_process.payload, 95, 98);
-            }
-
-            break;
-
-            default:
-                break;
-            }
+            uint32_t tmp = ((uint32_t)p[i*4+3]<<24) |
+                           ((uint32_t)p[i*4+2]<<16) |
+                           ((uint32_t)p[i*4+1]<<8 ) |
+                           ((uint32_t)p[i*4+0]<<0 );
+            pid_in_parameter[i].parameter.kp = *(float*)&tmp;
+            // 类似解析 ki、kd...
         }
+        break;
+
+    // ... 其它 ID 按需添加 ...
+
+    default:
+        break;
     }
 }
-static uint8_t rxByte;
 /* 在 reeRTOS init 里调用一次 */
 void Parser_Init(void)
 {
-    xFrameQueue = xQueueCreate(8, sizeof(Frame_t));
-    HAL_UART_Receive_IT(&huart3, &rxByte, 1);
+    HAL_UART_Receive_DMA(&huart3, dma_rx_buf, PARSER_DMA_BUF_SIZE);
+
+    /* 3) 使能空闲中断 */
+    __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
 }
 
-/* 例：HAL USART Rx 完成中断里喂字节并触发解析 */
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    rxByte = (uint8_t)(huart->Instance->DR & 0xFF);
 
-    if (huart == &huart3)
-    {
-        parser_feed(rxByte);
-        /* 重启下一次中断接收 */
-        HAL_UART_Receive_IT(&huart3, &rxByte, 1);
-    }
-}

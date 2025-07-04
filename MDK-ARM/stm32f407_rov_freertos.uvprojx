@@ -610,6 +610,11 @@
               <FileType>5</FileType>
               <FilePath>..\Source\Inc\ms5837_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>pid.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Source\Inc\pid.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -669,6 +674,11 @@
               <FileName>ms5837_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Source\Src\ms5837_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>pid.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\pid.c</FilePath>
             </File>
           </Files>
         </Group>

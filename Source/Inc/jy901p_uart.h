@@ -12,7 +12,7 @@ extern float roll,pitch,yaw,temperature_jy901s;
 extern float roll_last, pitch_last, yaw_last;
 extern float roll_total, pitch_total, yaw_total, yaw_total_start;
 extern float roll_start, pitch_start, yaw_start; // 用于记录初始角度
-
+extern int turns_of_pitch, turns_of_roll, turns_of_yaw;
 
       	
 /** 接收缓冲区长度 */

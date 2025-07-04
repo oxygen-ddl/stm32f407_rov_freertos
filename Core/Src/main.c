@@ -105,6 +105,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM11_Init();
   MX_TIM14_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -181,7 +182,7 @@ void SystemClock_Config(void)
 #include "move_control.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
-
+#include "move_drv.h"
 /* USER CODE END 4 */
 
 /**
@@ -205,13 +206,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     {
         xSemaphoreGiveFromISR(xTimer14Semaphore, &xHigherPriorityTaskWoken);
     }
-
+    else if (htim->Instance == TIM10)
+    {
+        xSemaphoreGiveFromISR(xTimer10Semaphore, &xHigherPriorityTaskWoken);
+    }
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();
   }
-
   /* USER CODE BEGIN Callback 1 */
 
   /* USER CODE END Callback 1 */

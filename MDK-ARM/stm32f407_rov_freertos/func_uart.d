@@ -57,3 +57,5 @@ stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/i
 stm32f407_rov_freertos\func_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/chat_with_upper.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/ms5837_uart.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/ath20_bmp280.h

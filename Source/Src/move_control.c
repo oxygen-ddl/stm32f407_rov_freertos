@@ -2,11 +2,11 @@
 #include <math.h>
 #include <stdint.h>
 #include "jy901p_uart.h"
-#include "ms5837_iic.h"
+#include "ms5837_uart.h"
 #include "transmit_power_board.h"
 #include "move_drv.h"
 #include "tim.h"
-
+#include "math.h"
 
 S_handle handle = {0}; // 手柄数据
 // 平移
@@ -28,6 +28,8 @@ S_pid_depth pid_depth = {0};
 
 float err_thea;
 uint16_t depth_target_value;
+
+float roll_target, pitch_target, yaw_target; // 目标值
 
 static void rov_move_data_process(float rov_move_data[6])
 {
@@ -164,6 +166,51 @@ static void Pid_Out_Calculate(void *pvParameters)
 
     motor_output();
 }
+// 用于校准方向
+void rov_move_uppper_process(void *pvParameters)
+{
+    for (;;)
+    {
+        if (go_forward == 100)
+        {
+            motor_set(1, 400);
+        }
+        if (go_forward == -100)
+        {
+            motor_set(2, 400);
+        }
+        if (go_left == 100)
+        {
+            motor_set(3, 400);
+        }
+        if (go_left == -100)
+        {
+            motor_set(4, 400);
+        }
+        if (go_up == 100)
+        {
+            motor_set(5, 400);
+        }
+        if (go_up == -100)
+        {
+            motor_set(6, 400);
+        }
+        if (move_yaw == 100)
+        {
+            motor_set(7, 400);
+        }
+        if (move_yaw == -100)
+        {
+            motor_set(8, 400);
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+        motor_set(1, 500);
+        vTaskDelay(pdMS_TO_TICKS(500));
+        motor_set(1,-500);
+        vTaskDelay(pdMS_TO_TICKS(500));
+        motor_set(1, 0);
+    }
+}
 
 // 电流顺序与推进器编号对应
 void current_convert(void)
@@ -187,21 +234,16 @@ void motor_init(void)
     {
         motor_set(i + 1, 0);
     }
-    vTaskDelay(pdMS_TO_TICKS(5000)); // 等待5秒
-    // 推进器初始化
+    HAL_Delay(10000); // 等待10秒
+    // 检查是否能动
     for (uint8_t i = 0; i < 8; ++i)
     {
         motor_set(i + 1, 180);
     }
-    vTaskDelay(pdMS_TO_TICKS(1000)); // 等待1秒
+    HAL_Delay(2000); // 等待5秒
     for (uint8_t i = 0; i < 8; ++i)
     {
         motor_set(i + 1, 0);
-    }
-    vTaskDelay(pdMS_TO_TICKS(1000)); // 等待1秒
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-        motor_set(i + 1, 500); // 设置推进器初始值
     }
 }
 
@@ -211,7 +253,6 @@ SemaphoreHandle_t xTimer14Semaphore = NULL;
 
 void Move_Control_Task(void *pvParameters)
 {
-    motor_init();
     /* 创建信号量，供 TIM 回调给 PID 线程发信号 */
     xTimer11Semaphore = xSemaphoreCreateBinary();
     xTimer14Semaphore = xSemaphoreCreateBinary();
@@ -221,17 +262,84 @@ void Move_Control_Task(void *pvParameters)
     /*  启动硬件定时器中断 */
     HAL_TIM_Base_Start_IT(&htim11);
     HAL_TIM_Base_Start_IT(&htim14);
+
+    //设置输出限幅幅值，积分限幅幅值,变积分指数值误差分界值
+    for(uint8_t i=0;i<6;++i)
+    {
+        pid_out_parameter[i].out_data_limit=500.0;
+        pid_out_parameter[i].integral_value_limit=15.0;
+    }
+
+    pid_out_parameter[0].parameter.kp=12;
+    pid_out_parameter[1].parameter.kp=12;
+    pid_out_parameter[2].parameter.kp=12;
+    pid_out_parameter[3].parameter.kp=15;
+    pid_out_parameter[4].parameter.kp=15;
+    pid_out_parameter[5].parameter.kp=15;
+
+    pid_out_parameter[0].parameter.ki=2;
+    pid_out_parameter[1].parameter.ki=2;
+    pid_out_parameter[2].parameter.ki=2;
+    pid_out_parameter[3].parameter.ki=2;
+    pid_out_parameter[4].parameter.ki=0;
+    pid_out_parameter[5].parameter.ki=2;
+
+    pid_out_parameter[0].parameter.kd=30;
+    pid_out_parameter[1].parameter.kd=30;
+    pid_out_parameter[2].parameter.kd=30;
+    pid_out_parameter[3].parameter.kd=30;
+    pid_out_parameter[4].parameter.kd=30;
+    pid_out_parameter[5].parameter.kd=30;
+
+    depth_pid.parameter.kp=2.5;
+    depth_pid.parameter.ki=0.05;
+    depth_pid.parameter.kd=1.3;
+    depth_pid.out_data_limit=100;
+    depth_pid.integral_value_limit=1;
+
+   for(int v=0;v<8;++v)
+    {
+       pid_in_parameter[v].out_data_limit=1000;
+    }    
 }
 
-
-void Move_PID_TASK(void *pvParameters)
+void thread_handle_ctrl_process_entry(void *pvParameters)
 {
-    for(;;)
+    for (;;)
     {
         // 等待定时器信号量
-        if (xSemaphoreTake(xTimer11Semaphore, portMAX_DELAY) == pdTRUE)
+        if (xSemaphoreTake(xTimer14Semaphore, portMAX_DELAY) == pdTRUE)
         {
-            Pid_Out_Calculate(NULL);
+            if (fabsf(move_roll)>10)
+            {
+                pid_out_parameter[0].target_value += (float)move_roll*0.04f;
+            }
+            else
+            {
+                turns_of_roll=0;
+                
+                pid_out_parameter[0].target_value=roll_target;
+            }
+            if (fabsf(move_pitch)>10)
+            {
+                pid_out_parameter[1].target_value += (float)move_pitch*0.04f;
+            }
+            else
+            {
+                
+                pid_out_parameter[1].target_value=pitch_target;
+            }
+            if (fabsf(move_yaw)>10)
+            {
+                pid_out_parameter[2].target_value += (float)move_yaw*0.04f;
+            }
+            else
+            {   
+                pid_out_parameter[2].target_value=yaw_target;
+            }
+            
+
         }
+
     }
 }

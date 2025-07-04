@@ -93,7 +93,7 @@ void pwm_set(uint8_t num, uint8_t channel, uint16_t data)
  */
 void motor_set(uint8_t num, float data)
 {
-    float limit = 800;
+    float limit = 600;
     if (data > limit)
     {
         data = limit;
@@ -147,3 +147,126 @@ void light_set(uint16_t data)
     data_set = data + 100;
     pwm_set(3, 3, data_set);
 }
+
+void move_putt_init(void)
+{
+    pwm_set(3,1,2000);
+    pwm_set(3,2,100);
+}
+/*****************************************仅完成基本运动**************************************** */
+//  1           2
+//      5   6
+//
+//
+//      7   8
+//3            4      
+//自行定义推进器转动方向
+//对于推进器1-4，其中，向下推送为正
+//对于推进器5-8，其中，向外推送为正
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "tim.h"
+#include "move_control.h"
+#include "jy901p_uart.h"
+#include "pid.h"
+#include "ms5837_uart.h"
+
+/* 全局信号量句柄，外部可用来在 PID 线程等待 */
+SemaphoreHandle_t xTimer10Semaphore = NULL;
+
+PIDController depth_PID;
+PIDController roll_pid;
+PIDController pitch_pid;
+PIDController yaw_pid;
+
+
+void Move_basic_Init(void)
+{
+    // 创建信号量
+    xTimer10Semaphore = xSemaphoreCreateBinary();
+    configASSERT(xTimer10Semaphore);
+    PID_Init(&depth_PID,2.0f,0.5f,0.1f,-100,100);
+    PID_Init(&roll_pid,2.0f,0.5f,0.1f,-100,100);
+    PID_Init(&yaw_pid,2.0f,0.5f,0.1f,-100,100);
+    PID_Init(&pitch_pid,2.0f,0.5f,0.1f,-100,100);
+
+    // 启动定时器，定时发送信号量
+    HAL_TIM_Base_Start_IT(&htim10);
+}
+typedef struct
+{
+    float go_forward_num;     // 前进后退
+    float go_left_num;   // 左右移动
+    float go_up_num;     // 上下移动
+
+    float move_yaw_num;    // 左右转动
+    float move_pitch_num;  // 上下转动
+    float move_roll_num;   // 左右翻滚
+} MOVE_NUMBER;
+
+
+int16_t motor_set_data[8];
+
+MOVE_NUMBER move_err = {0}; 
+
+float actual_roll,actual_pitch,actual_yaw;
+static void jy901_to_actual(void)
+{
+    //!jy901的默认角度中，roll是实际中的pitch
+    actual_pitch = roll_total;
+    actual_roll = actual_pitch;
+    actual_yaw = yaw_total;
+}
+
+static void motor_basic_output(void)
+{
+     //motor_set有限幅
+    for(uint8_t i=0;i<8;++i)
+    {
+        motor_set(i+1,motor_set_data[i]);
+    }
+}
+
+
+
+// !需要根据实际更改motor_set中的对应关系
+//俯仰、翻滚、偏航，前后、上下、左右
+void upper_move_process(void *pvParameters)
+{
+    for (;;)
+    {
+        // 等待定时器信号量
+        if (xSemaphoreTake(xTimer10Semaphore, portMAX_DELAY) == pdTRUE)
+        {
+            jy901_to_actual();
+
+            move_err.go_forward_num = go_forward*2;
+            move_err.go_left_num = go_left*2;
+
+            //需要加入pid进行处理
+
+            move_err.go_up_num = go_up*2;
+            move_err.move_pitch_num = move_pitch*2;
+            move_err.move_roll_num = move_roll*2;
+            move_err.move_yaw_num = move_yaw*2;
+            // move_err.go_up_num = PID_Update(&depth_PID, (ms5837_depth+(float)go_up*0.0001f), ms5837_depth, 0.02f);
+            // move_err.move_roll_num = PID_Update(&roll_pid,(actual_roll+(float)move_roll*0.1f),actual_roll,0.02f);
+            // move_err.move_yaw_num = PID_Update(&yaw_pid,(actual_yaw+(float)actual_yaw*0.1f),actual_yaw,0.02f);
+
+
+            motor_set_data[0] = + move_err.move_pitch_num  + move_err.move_roll_num + move_err.go_up_num;
+            motor_set_data[1] = + move_err.move_pitch_num - move_err.move_roll_num + move_err.go_up_num;
+            motor_set_data[2] = - move_err.move_pitch_num  +move_err.move_roll_num + move_err.go_up_num;
+            motor_set_data[3] = -move_err.move_pitch_num - move_err.move_roll_num + move_err.go_up_num;
+
+            motor_set_data[4] = + move_err.move_yaw_num - move_err.go_forward_num -move_err.go_left_num;
+            motor_set_data[5] = - move_err.move_yaw_num - move_err.go_forward_num + move_err.go_left_num;
+            motor_set_data[6] = - move_err.move_yaw_num + move_err.go_forward_num - move_err.go_left_num;
+            motor_set_data[7] = + move_err.move_yaw_num + move_err.go_forward_num + move_err.go_left_num;
+
+            motor_basic_output();
+        }
+    }
+}
+

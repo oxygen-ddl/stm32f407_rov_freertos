@@ -47,9 +47,8 @@ stm32f407_rov_freertos\move_control.o: ../Middlewares/Third_Party/FreeRTOS/Sourc
 stm32f407_rov_freertos\move_control.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\math.h
 stm32f407_rov_freertos\move_control.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\move_control.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
-stm32f407_rov_freertos\move_control.o: ../Source/Inc/ms5837_iic.h
-stm32f407_rov_freertos\move_control.o: ../Core/Inc/i2c.h
-stm32f407_rov_freertos\move_control.o: ../Core/Inc/main.h
+stm32f407_rov_freertos\move_control.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\move_control.o: ../Source/Inc/transmit_power_board.h
 stm32f407_rov_freertos\move_control.o: ../Source/Inc/move_drv.h
 stm32f407_rov_freertos\move_control.o: ../Core/Inc/tim.h
+stm32f407_rov_freertos\move_control.o: ../Core/Inc/main.h

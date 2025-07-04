@@ -54,3 +54,6 @@ stm32f407_rov_freertos\freertos.o: ../Source/Inc/func_uart.h
 stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdbool.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_control.h
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_uart.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_drv.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/ath20_bmp280.h

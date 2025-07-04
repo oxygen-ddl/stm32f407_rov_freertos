@@ -47,13 +47,15 @@
 
 #define RX_StartBit_Handle_func_defogging     0xC5
 
-void parser_feed(uint8_t ch);
+#define PARSER_MAX_PAYLOAD    128
+#define PARSER_DMA_BUF_SIZE   256   // DMA 缓冲区大小，>= 你可能一帧的最大长度
+
 void SendAllPack_Task(void *pvParameters);
 void Parser_Init(void);
-void vParserTask(void *pvParameters);
+void parsePacket(uint8_t *buf, uint16_t len);
 
-
-
+extern uint8_t dma_rx_buf[PARSER_DMA_BUF_SIZE];
+void upper_move_process(void *pvParameters);
 
 
 

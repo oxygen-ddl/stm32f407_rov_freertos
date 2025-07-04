@@ -16,6 +16,7 @@
         "ms5837_iic.h": "c",
         "cmsis_os.h": "c",
         "move_control.h": "c",
-        "message_buffer.h": "c"
+        "message_buffer.h": "c",
+        "ath20_bmp280.h": "c"
     }
 }
