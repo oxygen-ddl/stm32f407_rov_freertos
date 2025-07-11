@@ -221,11 +221,17 @@ static void jy901_to_actual(void)
 
 static void motor_basic_output(void)
 {
-     //motor_set有限幅
-    for(uint8_t i=0;i<8;++i)
-    {
-        motor_set(i+1,motor_set_data[i]);
-    }
+    motor_set(3,motor_set_data[0]);
+    motor_set(5,motor_set_data[1]);
+ 
+ 
+    motor_set(4,motor_set_data[2]);
+    motor_set(1,motor_set_data[3]);
+    motor_set(7,motor_set_data[4]);
+    motor_set(6,motor_set_data[5]);
+    motor_set(8,motor_set_data[6]);
+    motor_set(2,motor_set_data[7]);
+    
 }
 
 
@@ -260,13 +266,49 @@ void upper_move_process(void *pvParameters)
             motor_set_data[2] = - move_err.move_pitch_num  +move_err.move_roll_num + move_err.go_up_num;
             motor_set_data[3] = -move_err.move_pitch_num - move_err.move_roll_num + move_err.go_up_num;
 
-            motor_set_data[4] = + move_err.move_yaw_num - move_err.go_forward_num -move_err.go_left_num;
-            motor_set_data[5] = - move_err.move_yaw_num - move_err.go_forward_num + move_err.go_left_num;
-            motor_set_data[6] = - move_err.move_yaw_num + move_err.go_forward_num - move_err.go_left_num;
-            motor_set_data[7] = + move_err.move_yaw_num + move_err.go_forward_num + move_err.go_left_num;
+            motor_set_data[4] = + move_err.move_yaw_num + move_err.go_forward_num - move_err.go_left_num;
+            motor_set_data[5] = - move_err.move_yaw_num + move_err.go_forward_num + move_err.go_left_num;
+            motor_set_data[6] = - move_err.move_yaw_num - move_err.go_forward_num - move_err.go_left_num;
+            motor_set_data[7] = + move_err.move_yaw_num - move_err.go_forward_num + move_err.go_left_num;
 
+    
             motor_basic_output();
         }
     }
 }
+#include "FreeRTOS.h"
+#include "task.h"
+void pull_use_electric(void *pvParameters)
+{
+    for (;;)
+    {
+        if (mode.electromagnet == 0x1)//退出
+        {
+            pwm_set(3,1,100);
+            pwm_set(3,2,1100);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,RESET);
 
+
+        }
+        else if(mode.electromagnet == 0x2)//收回
+        {
+            pwm_set(3,1,1800);
+            pwm_set(3,2,100);
+
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);
+            vTaskDelay(pdMS_TO_TICKS(10000));
+
+        }
+        else if(mode.electromagnet == 0x0)
+        {
+            pwm_set(3,1,0);
+            pwm_set(3,2,0);
+
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);
+        }
+        
+            
+        vTaskDelay(pdMS_TO_TICKS(300));
+
+    }
+}

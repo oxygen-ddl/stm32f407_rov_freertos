@@ -58,6 +58,8 @@ osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
 osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
 osThreadId_t MS5837_IIC_TaskHandle; // MS5837 IIC任务句柄
 osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
+osThreadId_t tuigan_TaskHandle;
+
 
 const osThreadAttr_t view_variables_attributes = {
   .name = "view_variables",
@@ -95,6 +97,11 @@ const osThreadAttr_t ath20_bmp280_attributes = {
   .priority = (osPriority_t) osPriorityLow2,
 };
 
+const osThreadAttr_t tuigan_attributes = {
+  .name = "tuigan",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -165,12 +172,11 @@ void MX_FREERTOS_Init(void) {
 
   Move_Control_TaskHandle = osThreadNew(upper_move_process, NULL, &Move_Control_attributes); // 启动推进器控制任务
 
+  //tuigan_TaskHandle = osThreadNew(pull_use_electric,NULL,&tuigan_attributes);
+
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
   
   SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送任务 
-
-
-  //MS5837_IIC_TaskHandle = osThreadNew(MS5837_Task, NULL, &MS5837_IIC_attributes); // 启动MS5837 IIC任务
 
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 

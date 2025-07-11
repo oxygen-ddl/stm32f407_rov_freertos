@@ -232,7 +232,7 @@ void parsePacket(uint8_t *buf, uint16_t len)
         move_roll  = handle.roll;
         break;
 
-    case RX_StartBit_Handle_light: // 0xA2, N == 2
+    case RX_StartBit_Handle_light: 
         light.on = (int16_t)((p[1]<<8)|p[0]);
         mode.lockangle = (int16_t)((p[3]<<8)|p[2]);
         mode.unknow = (int16_t)((p[5]<<8)|p[4]);

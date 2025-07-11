@@ -236,10 +236,41 @@ void motor_init(void)
     }
     HAL_Delay(10000); // 等待10秒
     // 检查是否能动
-    for (uint8_t i = 0; i < 8; ++i)
-    {
-        motor_set(i + 1, 180);
-    }
+    motor_set(1,180);//为负
+    HAL_Delay(5000);
+    motor_set(1,0);
+
+    motor_set(2,180);//为负
+    HAL_Delay(5000);
+    motor_set(2,0);
+
+    motor_set(3,180);//为负
+    HAL_Delay(5000);
+    motor_set(3,0);
+
+    motor_set(4,180);//为正
+    HAL_Delay(5000);
+    motor_set(4,0);
+
+    // motor_set(5,180);//为正  逆时针
+    // HAL_Delay(5000);
+    // motor_set(5,0);
+
+    // motor_set(6,180);//为负     
+    // HAL_Delay(5000); 
+    // motor_set(6,0);
+
+    // motor_set(7,180);//为正   
+    // HAL_Delay(5000);
+    // motor_set(7,0);
+
+    // motor_set(8,180);//为正
+    // HAL_Delay(5000);
+    // motor_set(8,0);    
+    // for (uint8_t i = 0; i < 8; ++i)
+    // {
+    //     motor_set(i + 1, 180);
+    // }
     HAL_Delay(2000); // 等待5秒
     for (uint8_t i = 0; i < 8; ++i)
     {

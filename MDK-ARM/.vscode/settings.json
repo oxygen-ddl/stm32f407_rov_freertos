@@ -17,6 +17,9 @@
         "cmsis_os.h": "c",
         "move_control.h": "c",
         "message_buffer.h": "c",
-        "ath20_bmp280.h": "c"
+        "ath20_bmp280.h": "c",
+        "move_drv.h": "c",
+        "task.h": "c",
+        "transmit_power_board.h": "c"
     }
 }

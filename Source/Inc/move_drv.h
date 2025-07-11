@@ -12,4 +12,6 @@ void motor_set(uint8_t num,float data);
 void light_set(uint16_t data);
 void move_putt_init(void);
 void Move_basic_Init(void);
+void upper_move_process(void *pvParameters);
+void pull_use_electric(void *pvParameters);
 #endif /* MOVE_DRV_H */

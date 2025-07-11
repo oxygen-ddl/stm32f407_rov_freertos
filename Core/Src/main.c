@@ -27,7 +27,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "move_drv.h"
+#include "move_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,8 +108,11 @@ int main(void)
   MX_TIM14_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
-
-
+  motor_init();
+  pwm_set(3,1,1500);
+  pwm_set(3,2,1000);
+  //pwm_set(3,3,100);//灯
+  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);//低电平触发
   /* USER CODE END 2 */
 
   /* Init scheduler */
