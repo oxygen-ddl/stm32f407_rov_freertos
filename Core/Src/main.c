@@ -112,7 +112,7 @@ int main(void)
   pwm_set(3,1,1500);
   pwm_set(3,2,1000);
   //pwm_set(3,3,100);//灯
-  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);//低电平触发
+  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_SET);//低电平触发
   /* USER CODE END 2 */
 
   /* Init scheduler */

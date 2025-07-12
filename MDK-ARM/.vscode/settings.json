@@ -20,6 +20,7 @@
         "ath20_bmp280.h": "c",
         "move_drv.h": "c",
         "task.h": "c",
-        "transmit_power_board.h": "c"
+        "transmit_power_board.h": "c",
+        "stm32f4xx_it.h": "c"
     }
 }

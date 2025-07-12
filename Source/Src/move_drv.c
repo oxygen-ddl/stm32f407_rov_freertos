@@ -286,7 +286,7 @@ void pull_use_electric(void *pvParameters)
         {
             pwm_set(3,1,100);
             pwm_set(3,2,1100);
-            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,RESET);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_RESET);
 
 
         }
@@ -295,7 +295,7 @@ void pull_use_electric(void *pvParameters)
             pwm_set(3,1,1800);
             pwm_set(3,2,100);
 
-            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_SET);
             vTaskDelay(pdMS_TO_TICKS(10000));
 
         }
@@ -304,7 +304,7 @@ void pull_use_electric(void *pvParameters)
             pwm_set(3,1,0);
             pwm_set(3,2,0);
 
-            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,SET);
+            HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_SET);
         }
         
             

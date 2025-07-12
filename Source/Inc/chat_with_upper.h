@@ -2,6 +2,8 @@
 #define CHAT_WITH_UPPER_H
 
 #include "stm32f4xx_hal.h"
+#include "FreeRTOS.h"
+#include "queue.h"
 
 #define USER_MAIN_DEBUG    //不需要打印信息时时注释掉该行宏
 
@@ -47,15 +49,25 @@
 
 #define RX_StartBit_Handle_func_defogging     0xC5
 
-#define PARSER_MAX_PAYLOAD    128
 #define PARSER_DMA_BUF_SIZE   256   // DMA 缓冲区大小，>= 你可能一帧的最大长度
+
+typedef struct
+{
+  uint8_t data[PARSER_DMA_BUF_SIZE];
+  uint16_t len;
+}Parse_Msg_t;
+
+
+
 
 void SendAllPack_Task(void *pvParameters);
 void Parser_Init(void);
 void parsePacket(uint8_t *buf, uint16_t len);
+void Parse_Task(void *pvParameters);
 
-extern uint8_t dma_rx_buf[PARSER_DMA_BUF_SIZE];
-void upper_move_process(void *pvParameters);
+extern uint8_t parse_rx_buf[PARSER_DMA_BUF_SIZE];
+extern QueueHandle_t uart_rx_queue;
+
 
 
 

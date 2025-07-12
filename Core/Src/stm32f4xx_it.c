@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "jy901p_uart.h"
+#include "chat_with_upper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -333,7 +334,24 @@ void USART2_IRQHandler(void)
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
+    /* 1) 空闲检测 */
+    if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE))
+    {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+        /* 2) 停 DMA，算长度 */
+        HAL_UART_DMAStop(&huart3);
+        uint16_t len = PARSER_DMA_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart3.hdmarx);
+        /* 3) 打包并投队列 */
+        Parse_Msg_t buf;
+        buf.len = len;
+        memcpy(buf.data,parse_rx_buf,len);
+        BaseType_t awakened = pdFALSE;
+        xQueueSendFromISR(uart_rx_queue, &buf, &awakened);
+        portYIELD_FROM_ISR(awakened);
+        /* 4) 重启 DMA */
+        HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
 
+    }
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */

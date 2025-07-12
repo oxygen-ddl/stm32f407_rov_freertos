@@ -196,7 +196,6 @@ float float_convert(uint8_t a[], int start, int end)
 #include "queue.h"
 #include "string.h"     // memcpy
 
-uint8_t dma_rx_buf[PARSER_DMA_BUF_SIZE]; // DMA 接收缓冲区
 /* 真正做 unpack 的任务 */
 /* 解析并处理一帧数据 */
 void parsePacket(uint8_t *buf, uint16_t len)
@@ -263,13 +262,38 @@ void parsePacket(uint8_t *buf, uint16_t len)
         break;
     }
 }
-/* 在 reeRTOS init 里调用一次 */
+
+uint8_t parse_rx_buf[PARSER_DMA_BUF_SIZE];
+QueueHandle_t uart_rx_queue;
+
+/* 在 freeRTOS init 里调用一次 */
 void Parser_Init(void)
 {
-    HAL_UART_Receive_DMA(&huart3, dma_rx_buf, PARSER_DMA_BUF_SIZE);
+    uart_rx_queue = xQueueCreate(PARSER_DMA_BUF_SIZE,sizeof(uint8_t));
+    if (uart_rx_queue == NULL)
+    {
+        Error_Handler();
+    }
+    
+    //启动dma接收
+    HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
 
     /* 3) 使能空闲中断 */
     __HAL_UART_ENABLE_IT(&huart3, UART_IT_IDLE);
 }
 
+
+void Parse_Task(void *pvParameters)
+{
+    Parse_Msg_t buf_temp;
+    for (;;)
+    {
+        if (xQueueReceive(uart_rx_queue,&buf_temp,portMAX_DELAY) == pdPASS)
+        {
+            parsePacket(buf_temp.data,buf_temp.len);
+        }
+        
+    }
+    
+}
 
