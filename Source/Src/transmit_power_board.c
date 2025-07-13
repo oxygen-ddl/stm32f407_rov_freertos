@@ -137,186 +137,99 @@ void switch_Process_Task(void *pvParameters)
         }
     }
 }
-//数据解析
-#include "queue.h"
-uint8_t uart5_buf[power_board_max_len];
-QueueHandle_t uart5_parse_queue;
 
-void Uart5_Parse_Init(void)
+/*
+ * @brief  解析一段缓存区里的完整帧（帧头 0xAA，帧尾 0xFF）
+ * @param  buf    指向接收到的数据数组
+ * @param  len    数组长度
+ */
+void parsePowerBoardFrame(const uint8_t *buf, uint8_t len)
 {
-    uart5_parse_queue = xQueueCreate(power_board_max_len,sizeof(uint8_t));
-    if (uart5_parse_queue == NULL)
-    {
-        Error_Handler();
-    }
-    HAL_UART_Receive_DMA(&huart5,uart5_buf,power_board_max_len);
-    __HAL_UART_ENABLE_IT(&huart5,UART_IT_IDLE);
+    uint8_t head = 0, tail = 0, data_head = 0, data_tail = 0;
+    uint8_t data_check = 0;
 
-}
-
-void Uart5_Parse_Task(void *pvParameters)
-{
-    Power_board_Msg_t temp;
-    for(;;)
+    // 1) 找到 head/data_head
+    for (uint8_t i = 0; i + 1 < len; ++i)
     {
-        if (xQueueReceive(uart5_parse_queue,&temp,portMAX_DELAY) == pdPASS)
+        if (buf[i] == 0xAA &&
+            (buf[i+1] == 0xA1 || buf[i+1] == 0xA3 ||
+             buf[i+1] == 0xA4 || buf[i+1] == 0xA5))
         {
-            //! 
-            
+            head = i;
+            data_head = i + 1;
+            break;
         }
     }
-}
-
-
-
-/*数据接收处理*/
-static void data_receive_process(void)
-{
-    uint8_t Rx_buffer_5[data_buffer_size] = {0};
-    uint8_t length = 0;
-    while (CircularRxBuffer_Read(&Rx_buffer_5[length]))
+    // 2) 找到 data_tail/tail
+    for (uint8_t i = data_head + 2; i < len; ++i)
     {
-        ++length;
-    }
-    uint8_t head = 0, tail = 0, data_head = 0, data_tail = 0, data_check = 0;
-    for (uint8_t i = 0; i < length; ++i)
-    {
-        if (Rx_buffer_5[i] == 0xaa)
-        {
-            if (Rx_buffer_5[i + 1] == 0xa1 || Rx_buffer_5[i + 1] == 0xa3 || Rx_buffer_5[i + 1] == 0xa4 || Rx_buffer_5[i + 1] == 0xa5)
-            {
-                head = i;
-                data_head = i + 1;
-            }
-        }
-        if (Rx_buffer_5[i] == 0xff && Rx_buffer_5[i - 1] == 0xaf)
+        if (buf[i] == 0xFF && buf[i-1] == 0xAF)
         {
             tail = i;
             data_tail = i - 1;
+            break;
         }
     }
-    // rt_kprintf("head:%d\t",head);
-    // rt_kprintf("tail:%d\n",tail);
-    if (tail != 0 && tail != head && head < tail)
+    // 检查合法性
+    if (head >= tail || data_head >= data_tail) return;
+
+    // 根据 data_head 指针判断包类型
+    switch (buf[data_head])
     {
-        // rt_kprintf("come in 1\n");
-        if (Rx_buffer_5[data_head] == 0xa1) // adc
+    case 0xA1:  // ADC 推进器电流包，payload 长度=18
+    {
+        if (data_tail - data_head - 1 < 18) return;
+        // data bytes start at buf[data_head+1]
+        const uint8_t *p = buf + data_head + 1;
+        // 校验：data_temp[0]+data_temp[2]+data_temp[15] + buf[data_tail]
+        data_check = p[0] + p[2] + p[15] + buf[data_tail];
+        if ((uint8_t)(data_check) != buf[data_tail - 1]) return;
+
+        // 拆 9 路 16 位电流
+        for (uint8_t i = 0; i < 9; ++i)
         {
-            uint8_t data_temp[18] = {0};
-            uint16_t data_adc_temp[9];
-            for (uint8_t i = 0; i < 18; ++i)
-            {
-                data_temp[i] = Rx_buffer_5[i + data_head + 1];
-            }
-            data_check = data_temp[0] + data_temp[2] + data_temp[15] + Rx_buffer_5[data_tail];
-            // rt_kprintf("here\n");
-            if (data_check == Rx_buffer_5[data_tail - 1])
-            {
-                for (uint8_t i = 0; i < 9; ++i)
-                {
-                    data_adc_temp[i] = (uint16_t)(data_temp[2 * i] << 8) | (data_temp[2 * i + 1]);
-                }
-                if (data_adc_temp[4] == 0) // 电源电压，不可能为零；剔除异常数据
-                {
-                    data_adc_temp[4] = current_adc_data[4];
-                }
-                for (uint8_t i = 0; i < 9; ++i)
-                {
-                    current_adc_data[i] = data_adc_temp[i];
-                }
-                // multiple_average_filtering(current_adc_data);
-                // rt_kprintf("come in\n");
-                // rt_kprintf("%s",current_adc_data);
-            }
-            else
-            {
-                for (uint8_t i = 0; i < length; ++i)
-                {
-                    CircularRxBuffer_Write(Rx_buffer_5[i]);
-                }
-                return;
-            }
+            current_adc_data[i] = (uint16_t)(p[2*i] << 8) | p[2*i + 1];
         }
-        if (Rx_buffer_5[data_head] == 0xa3) // shtc3
-        {
-            uint8_t data_temp[4] = {0};
-            for (uint8_t i = 0; i < 4; ++i)
-            {
-                data_temp[i] = Rx_buffer_5[i + data_head + 1];
-            }
-            data_check = data_temp[0] + data_temp[3] + Rx_buffer_5[data_tail];
-            // rt_kprintf("here\n");
-            if (data_check == Rx_buffer_5[data_tail - 1])
-            {
-                RH_power_board = (uint16_t)(data_temp[0] << 8) | (data_temp[1]);
-                temperature_power_board = (uint16_t)(data_temp[2] << 8) | (data_temp[3]);
-                // rt_kprintf("come in\n");
-                // rt_kprintf("rh:%d,tem:%d",(int)RH,(int)temperature);
-            }
-            else
-            {
-                for (uint8_t i = 0; i < length; ++i)
-                {
-                    CircularRxBuffer_Write(Rx_buffer_5[i]);
-                }
-                return;
-            }
-        }
-        if (Rx_buffer_5[data_head] == 0xa4) // 活动校验
-        {
-            uint8_t data_temp = Rx_buffer_5[data_head + 1];
-            data_check = data_temp + Rx_buffer_5[data_tail];
-            if (data_check == Rx_buffer_5[data_tail - 1] && data_temp == 0xbb)
-            {
-                // rt_kprintf("here");
-                // 发送活动校验
-                tx_buffer_clear();
-                Tx_buffer_5[0] = 0xaa;
-                Tx_buffer_5[1] = 0xa4;
-                Tx_buffer_5[2] = 0xcc;
-                Tx_buffer_5[3] = (uint8_t)(0xcc + 0xaf);
-                Tx_buffer_5[4] = 0xaf;
-                Tx_buffer_5[5] = 0xff;
-                HAL_UART_Transmit_DMA(&huart5, Tx_buffer_5, sizeof(Tx_buffer_5));
-            }
-            else
-            {
-                for (uint8_t i = 0; i < length; ++i)
-                {
-                    CircularRxBuffer_Write(Rx_buffer_5[i]);
-                }
-                return;
-            }
-        }
-        if (Rx_buffer_5[data_head] == 0xa5) // 开关设置成功
-        {
-            // rt_kprintf("here1\n");
-            uint8_t data_temp = Rx_buffer_5[data_head + 1];
-            // rt_kprintf("%c\n",data_temp);
-            data_check = data_temp + Rx_buffer_5[data_tail]; //
-            if (data_check == Rx_buffer_5[data_tail - 1] && data_temp == 0x65)
-            {
-                switch_send_flag = 1;
-                // rt_kprintf("%d",switch_send_flag);
-                printf("switch set ok\n");
-            }
-            else
-            {
-                for (uint8_t i = 0; i < length; ++i)
-                {
-                    CircularRxBuffer_Write(Rx_buffer_5[i]);
-                }
-                return;
-            }
-        }
+        // 电压异常剔除
+        if (current_adc_data[4] == 0)
+            current_adc_data[4] = current_adc_data[4]; // old value 保持不变
+        break;
     }
-    else
+    case 0xA3:  // 温湿度包，payload=4
     {
-        for (uint8_t i = 0; i < length; ++i)
-        {
-            CircularRxBuffer_Write(Rx_buffer_5[i]);
-        }
-        return;
+        if (data_tail - data_head - 1 < 4) return;
+        const uint8_t *p = buf + data_head + 1;
+        data_check = p[0] + p[3] + buf[data_tail];
+        if ((uint8_t)(data_check) != buf[data_tail - 1]) return;
+
+        RH_power_board = (uint16_t)(p[0] << 8) | p[1];
+        temperature_power_board = (uint16_t)(p[2] << 8) | p[3];
+        break;
+    }
+    case 0xA4:  // 活动校验包，payload=1
+    {
+        if (data_tail - data_head - 1 < 1) return;
+        uint8_t v = buf[data_head + 1];
+        data_check = v + buf[data_tail];
+        if ((uint8_t)(data_check) != buf[data_tail - 1] || v != 0xBB) return;
+
+        // 回应活动校验
+        uint8_t tx[6] = {0xAA, 0xA4, 0xCC, (uint8_t)(0xCC + 0xAF), 0xAF, 0xFF};
+        HAL_UART_Transmit_DMA(&huart5, tx, sizeof(tx));
+        break;
+    }
+    case 0xA5:  // 开关设置成功包，payload=1
+    {
+        if (data_tail - data_head - 1 < 1) return;
+        uint8_t v = buf[data_head + 1];
+        data_check = v + buf[data_tail];
+        if ((uint8_t)(data_check) != buf[data_tail - 1] || v != 0x65) return;
+
+        switch_send_flag = 1;
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -425,3 +338,35 @@ void light_switch_set(uint8_t data)
     send_data_assembly();
     HAL_UART_Transmit_DMA(&huart5, Tx_buffer_5, sizeof(Tx_buffer_5));
 }
+
+//数据解析
+#include "queue.h"
+uint8_t uart5_buf[power_board_max_len];
+QueueHandle_t uart5_parse_queue;
+
+void Uart5_Parse_Init(void)
+{
+    uart5_parse_queue = xQueueCreate(power_board_max_len,sizeof(uint8_t));
+    if (uart5_parse_queue == NULL)
+    {
+        Error_Handler();
+    }
+    HAL_UART_Receive_DMA(&huart5,uart5_buf,power_board_max_len);
+    __HAL_UART_ENABLE_IT(&huart5,UART_IT_IDLE);
+
+}
+
+void Uart5_Parse_Task(void *pvParameters)
+{
+    Power_board_Msg_t temp;
+    for(;;)
+    {
+        if (xQueueReceive(uart5_parse_queue,&temp,portMAX_DELAY) == pdPASS)
+        {
+            parsePowerBoardFrame(temp.data,temp.len);
+            
+        }
+    }
+}
+
+
