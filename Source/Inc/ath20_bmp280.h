@@ -3,13 +3,6 @@
 
 #include "stm32f4xx_hal.h"
 
-// bmp280大气压强与温度传感器
-extern float bmp280_temperature; // 温度数据
-extern float bmp280_pressure;    // 压力数据
-// ath20 温湿度传感器数据
-extern float ath20_humidity;     // 湿度数据
-extern float ath20_temperature; // 温度数据
-
 
 /**
  * @brief 初始化并读取一次各传感器的校准数据
@@ -28,6 +21,13 @@ HAL_StatusTypeDef BMP280_Read(void);
 HAL_StatusTypeDef ATH20_Read(void);
 
 void Sensors_Task(void *pvParameters);
+
+// bmp280大气压强与温度传感器
+extern float bmp280_temperature; // 温度数据
+extern float bmp280_pressure;    // 压力数据
+// ath20 温湿度传感器数据
+extern float ath20_humidity;     // 湿度数据
+extern float ath20_temperature; // 温度数据
 
 
 #endif /* ATH20_BMP280_H */

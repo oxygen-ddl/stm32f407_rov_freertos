@@ -107,6 +107,7 @@ int main(void)
   MX_TIM11_Init();
   MX_TIM14_Init();
   MX_TIM10_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   motor_init();
   pwm_set(3,1,1500);

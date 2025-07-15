@@ -21,6 +21,7 @@
         "move_drv.h": "c",
         "task.h": "c",
         "transmit_power_board.h": "c",
-        "stm32f4xx_it.h": "c"
+        "stm32f4xx_it.h": "c",
+        "software_uart.h": "c"
     }
 }

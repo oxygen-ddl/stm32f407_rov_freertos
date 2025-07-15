@@ -57,3 +57,4 @@ stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/in
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_drv.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/ath20_bmp280.h
+stm32f407_rov_freertos\freertos.o: ../Source/Inc/distance_measure.h

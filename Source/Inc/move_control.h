@@ -5,7 +5,6 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-
 typedef struct 
 {
     float kp;

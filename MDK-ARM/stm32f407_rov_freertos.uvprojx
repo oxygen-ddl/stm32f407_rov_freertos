@@ -615,6 +615,11 @@
               <FileType>5</FileType>
               <FilePath>..\Source\Inc\pid.h</FilePath>
             </File>
+            <File>
+              <FileName>software_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Source\Inc\software_uart.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -679,6 +684,11 @@
               <FileName>pid.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Source\Src\pid.c</FilePath>
+            </File>
+            <File>
+              <FileName>software_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\software_uart.c</FilePath>
             </File>
           </Files>
         </Group>

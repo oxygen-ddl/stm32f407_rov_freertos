@@ -33,6 +33,8 @@
 #include "ms5837_uart.h"
 #include "move_drv.h"
 #include "ath20_bmp280.h"
+#include "distance_measure.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +61,8 @@ osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
 osThreadId_t MS5837_IIC_TaskHandle; // MS5837 IIC任务句柄
 osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
 osThreadId_t tuigan_TaskHandle;
+osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
+osThreadId_t Wave_Distance_Handle_TaskHandle;//避障传感器解析任务句柄
 
 
 const osThreadAttr_t view_variables_attributes = {
@@ -102,6 +106,20 @@ const osThreadAttr_t tuigan_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow3,
 };
+
+const osThreadAttr_t wave_distance_trigger_attributes = {
+  .name = "wave_distance__trigger",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
+
+const osThreadAttr_t wave_distance_handle_attributes = {
+  .name = "wave_distance_handle",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
+
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -181,6 +199,15 @@ void MX_FREERTOS_Init(void) {
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
   Ath20_Bmp280_TaskHandle = osThreadNew(Sensors_Task, NULL, &ath20_bmp280_attributes); // 启动循环LED任务
+
+  Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
+
+  Wave_Distance_Trigger_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性触发任务
+
+
+  
+
+
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
