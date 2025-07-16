@@ -656,14 +656,14 @@
               <FilePath>..\Source\Src\jy901p_uart.c</FilePath>
             </File>
             <File>
-              <FileName>ath20_bmp280.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Source\Src\ath20_bmp280.c</FilePath>
-            </File>
-            <File>
               <FileName>func_uart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Source\Src\func_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>ath20_bmp280.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\ath20_bmp280.c</FilePath>
             </File>
             <File>
               <FileName>ms5837_iic.c</FileName>

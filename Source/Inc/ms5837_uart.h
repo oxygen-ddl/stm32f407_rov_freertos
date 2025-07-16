@@ -5,17 +5,17 @@
 #include <stdint.h>
 
 /**
- * @brief  Æô¶¯ UART4 DMA + ¿ÕÏĞÖĞ¶Ï½ÓÊÕ£¬²¢½âÎöÎÂ¶È/Éî¶È
- * @note   ÔÚ HAL ¿â³õÊ¼»¯²¢ MX_USART4_UART_Init() ºóµ÷ÓÃ
+ * @brief  å¯åŠ¨ UART4 DMA + ç©ºé—²ä¸­æ–­æ¥æ”¶ï¼Œå¹¶è§£ææ¸©åº¦/æ·±åº¦
+ * @note   åœ¨ HAL åº“åˆå§‹åŒ–å¹¶ MX_USART4_UART_Init() åè°ƒç”¨
  */
 void Parser4_Init(void);
 
-/* ½âÎöµÃµ½µÄÎïÀíÁ¿£¬µ¥Î»£º¡æ¡¢m */
+/* è§£æå¾—åˆ°çš„ç‰©ç†é‡ï¼Œå•ä½ï¼šâ„ƒã€m */
 extern float ms5837_temperature;
 extern float ms5837_depth;
 extern float ms5837_pressure;
 
-/* DMA ½ÓÊÕ»º³åÇø´óĞ¡£¨Òª´óÓÚÒ»Ö¡×î´ó³¤¶È£© */
+/* DMA æ¥æ”¶ç¼“å†²åŒºå¤§å°ï¼ˆè¦å¤§äºä¸€å¸§æœ€å¤§é•¿åº¦ï¼‰ */
 #define UART4_DMA_BUF_SIZE  128
 void parse_frame(const uint8_t *buf, int len);
 

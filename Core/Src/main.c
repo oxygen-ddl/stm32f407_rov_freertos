@@ -109,7 +109,7 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  motor_init();
+  //motor_init();
   pwm_set(3,1,1500);
   pwm_set(3,2,1000);
   //pwm_set(3,3,100);//灯

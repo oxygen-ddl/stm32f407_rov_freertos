@@ -34,6 +34,8 @@
 #include "move_drv.h"
 #include "ath20_bmp280.h"
 #include "distance_measure.h"
+#include "transmit_power_board.h"
+
 
 /* USER CODE END Includes */
 
@@ -63,6 +65,9 @@ osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
 osThreadId_t tuigan_TaskHandle;
 osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
 osThreadId_t Wave_Distance_Handle_TaskHandle;//避障传感器解析任务句柄
+osThreadId_t Send_Power_Board_TaskHandle;   //向电源板传递信息
+osThreadId_t Parse_Power_Board_TaskHandle;//处理电源板的信息
+
 
 
 const osThreadAttr_t view_variables_attributes = {
@@ -120,6 +125,18 @@ const osThreadAttr_t wave_distance_handle_attributes = {
 };
 
 
+const osThreadAttr_t send_power_handle_attributes = {
+  .name = "send_power_handle",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
+
+const osThreadAttr_t parse_power_handle_attributes = {
+  .name = "parse_power_handle",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow3,
+};
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -159,7 +176,8 @@ void MX_FREERTOS_Init(void) {
   //Move_Control_Task(NULL); // 启动推进器控制任务
   Parser4_Init(); // 启动MS5837 UART解析任务
   Move_basic_Init();
-
+  Uart5_Parse_Init();
+  
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -198,11 +216,18 @@ void MX_FREERTOS_Init(void) {
 
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
-  Ath20_Bmp280_TaskHandle = osThreadNew(Sensors_Task, NULL, &ath20_bmp280_attributes); // 启动循环LED任务
+  Ath20_Bmp280_TaskHandle = osThreadNew(Sensors_Task, NULL, &ath20_bmp280_attributes); // 启动气压计与温度计任务
 
   Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
 
-  Wave_Distance_Trigger_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性触发任务
+  //Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
+
+  Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);//启动发送给电源板数据任务
+
+  Parse_Power_Board_TaskHandle = osThreadNew(Uart5_Parse_Task,NULL,&parse_power_handle_attributes);//启动解析电源板数据任务
+
+
+
 
 
   

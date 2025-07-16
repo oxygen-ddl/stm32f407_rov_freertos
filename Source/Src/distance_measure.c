@@ -32,6 +32,7 @@ void Handle_Muart_Task(void *pvParameters)
 
    for (;;)
    {
+
        if (SoftUART_ReceiveByte(muart_2, &c, 100))
        {
            if (c != 0xff)
@@ -74,6 +75,8 @@ void Handle_Muart_Task(void *pvParameters)
                }
            }
        }
+       vTaskDelay(pdMS_TO_TICKS(1));
+
    }
 }
 

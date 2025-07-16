@@ -22,6 +22,12 @@
         "task.h": "c",
         "transmit_power_board.h": "c",
         "stm32f4xx_it.h": "c",
-        "software_uart.h": "c"
+        "software_uart.h": "c",
+        "queue.h": "c",
+        "array": "c",
+        "string": "c",
+        "string_view": "c",
+        "span": "c",
+        "stdio.h": "c"
     }
 }

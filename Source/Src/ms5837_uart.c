@@ -1,35 +1,35 @@
 #include "ms5837_uart.h"
-#include "usart.h"    // CubeMX Éú³ÉµÄ huart4 ¾ä±ú
+#include "usart.h"    // CubeMX ç”Ÿæˆçš„ huart4 å¥æŸ„
 #include "stm32f4xx_hal.h"
 #include <string.h>
 
 
 
-/* Ğ­ÒéÀï¡°ÎÂ¶È¡±ÖĞÎÄÇ°×ºµÄ GBK ±àÂë */
+/* åè®®é‡Œâ€œæ¸©åº¦â€ä¸­æ–‡å‰ç¼€çš„ GBK ç¼–ç  */
 static const uint8_t PREFIX_TEMP[4]  = {0xCE,0xC2,0xB6,0xC8};
-/* Ğ­ÒéÀï¡°Éî¶È¡±ÖĞÎÄÇ°×ºµÄ GBK ±àÂë */
+/* åè®®é‡Œâ€œæ·±åº¦â€ä¸­æ–‡å‰ç¼€çš„ GBK ç¼–ç  */
 static const uint8_t PREFIX_DEPTH[4] = {0xC9,0xEE,0xB6,0xC8};
 
 static uint8_t dma_rx_buf[UART4_DMA_BUF_SIZE];
 
-/* ½âÎö½á¹û */
+/* è§£æç»“æœ */
 float ms5837_temperature = 0.0f;
 float ms5837_depth       = 0.0f;
 float ms5837_pressure = 0.0f; 
 /**
- * @brief  ´Ó buf ÖĞÒÔ¡°Ç°×º + ':' + ASCII Êı×Ö + '.' + ASCII Êı×Ö¡±¸ñÊ½½âÎöÒ»¸öÊıÖµ
- * @param  buf   ÆğÊ¼µØÖ·
- * @param  len   buf ¿É¶Á³¤¶È
- * @param  prefix 4 ×Ö½ÚÇ°×º±àÂë
- * @param  out   ½á¹û£¨´ø·ûºÅ£¬¼õÈ¥ 0x30£©
- * @return  >=0 ³É¹¦½âÎöµ½²¢Ğ´Èë *out£¬·µ»ØÏûºÄµÄ×Ö½ÚÊı£»·ñÔò·µ»Ø -1
+ * @brief  ä» buf ä¸­ä»¥â€œå‰ç¼€ + ':' + ASCII æ•°å­— + '.' + ASCII æ•°å­—â€æ ¼å¼è§£æä¸€ä¸ªæ•°å€¼
+ * @param  buf   èµ·å§‹åœ°å€
+ * @param  len   buf å¯è¯»é•¿åº¦
+ * @param  prefix 4 å­—èŠ‚å‰ç¼€ç¼–ç 
+ * @param  out   ç»“æœï¼ˆå¸¦ç¬¦å·ï¼Œå‡å» 0x30ï¼‰
+ * @return  >=0 æˆåŠŸè§£æåˆ°å¹¶å†™å…¥ *outï¼Œè¿”å›æ¶ˆè€—çš„å­—èŠ‚æ•°ï¼›å¦åˆ™è¿”å› -1
  */
 static int parse_value(const uint8_t *buf, int len,
                        const uint8_t prefix[4],
                        float *out)
 {
     int i = 0;
-    // ÕÒÇ°×º
+    // æ‰¾å‰ç¼€
     for (; i + 5 < len; i++)
     {
         if (memcmp(buf + i, prefix, 4) == 0 && buf[i+4] == 0x3A /*':'*/)
@@ -39,7 +39,7 @@ static int parse_value(const uint8_t *buf, int len,
     int j = i + 5;
     int sign = 1;
     int iv = 0, fv = 0, fd = 0;
-    // ÕûÊı²¿·Ö
+    // æ•´æ•°éƒ¨åˆ†
     while (j < len && buf[j] != 0x2E /*'.'*/)
     {
         if (buf[j] == 0x2D /*'-'*/) { sign = -1; }
@@ -51,38 +51,38 @@ static int parse_value(const uint8_t *buf, int len,
         j++;
     }
     if (j >= len || buf[j] != 0x2E) return -1;
-    j++; // Ìø¹ı '.'
-    // Ğ¡ÊıÁ½Î»
+    j++; // è·³è¿‡ '.'
+    // å°æ•°ä¸¤ä½
     for (fd = 0; fd < 2 && j < len; fd++, j++)
     {
         if (buf[j] >= '0' && buf[j] <= '9')
             fv = fv * 10 + (buf[j] - '0');
         else break;
     }
-    // ×é×°
+    // ç»„è£…
     *out = sign * (iv + fv / (float)(fd == 0 ? 1 : (fd==1?10:100)));
     return j - i;
 }
 
 /**
- * @brief  ½ÓÊÕÒ»¶Î DMA Êı¾İºóÒ»´ÎĞÔµ÷ÓÃ£¬ÌáÈ¡¡°ÎÂ¶È¡±ºÍ¡°Éî¶È¡±
+ * @brief  æ¥æ”¶ä¸€æ®µ DMA æ•°æ®åä¸€æ¬¡æ€§è°ƒç”¨ï¼Œæå–â€œæ¸©åº¦â€å’Œâ€œæ·±åº¦â€
  */
 void parse_frame(const uint8_t *buf, int len)
 {
-    // ½âÎöÎÂ¶È
+    // è§£ææ¸©åº¦
     parse_value(buf, len, PREFIX_TEMP, &ms5837_temperature);
-    // ½âÎöÉî¶È
+    // è§£ææ·±åº¦
     parse_value(buf, len, PREFIX_DEPTH, &ms5837_depth);
 }
 
 /**
- * @brief  ³õÊ¼»¯£¬Æô¶¯ DMA + ¿ÕÏĞÖĞ¶Ï½ÓÊÕ
+ * @brief  åˆå§‹åŒ–ï¼Œå¯åŠ¨ DMA + ç©ºé—²ä¸­æ–­æ¥æ”¶
  */
 void Parser4_Init(void)
 {
-    // Æô¶¯ DMA ½ÓÊÕ
+    // å¯åŠ¨ DMA æ¥æ”¶
     HAL_UART_Receive_DMA(&huart4, dma_rx_buf, UART4_DMA_BUF_SIZE);
-    // Ê¹ÄÜ¿ÕÏĞÖĞ¶Ï
+    // ä½¿èƒ½ç©ºé—²ä¸­æ–­
     __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
 }
 

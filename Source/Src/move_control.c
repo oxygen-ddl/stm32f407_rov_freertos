@@ -369,7 +369,6 @@ void thread_handle_ctrl_process_entry(void *pvParameters)
                 pid_out_parameter[2].target_value=yaw_target;
             }
             
-
         }
 
     }

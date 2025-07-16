@@ -26,7 +26,7 @@
 #include "chat_with_upper.h"
 #include "transmit_power_board.h"
 #include "software_uart.h"
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -392,30 +392,12 @@ void DMA1_Stream7_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles UART5 global interrupt.
-  */
+ * @brief This function handles UART5 global interrupt.
+ */
 void UART5_IRQHandler(void)
 {
   /* USER CODE BEGIN UART5_IRQn 0 */
-    /* 1) 空闲检测 */
-    if (__HAL_UART_GET_FLAG(&huart5, UART_FLAG_IDLE))
-    {
-        __HAL_UART_CLEAR_IDLEFLAG(&huart5);
-        /* 2) 停 DMA，算长度 */
-        HAL_UART_DMAStop(&huart5);
-        uint16_t len = power_board_max_len - __HAL_DMA_GET_COUNTER(huart5.hdmarx);
-        /* 3) 打包并投队列 */
-        Power_board_Msg_t buf;
-        buf.len = len;
-        memcpy(buf.data,uart5_buf,len);
-        BaseType_t awakened = pdFALSE;
-        xQueueSendFromISR(uart5_parse_queue, &buf, &awakened);
-        portYIELD_FROM_ISR(awakened);
-        /* 4) 重启 DMA */
-        HAL_UART_Receive_DMA(&huart5, uart5_buf, PARSER_DMA_BUF_SIZE);
-
-    }
-  
+  UART5_IT_TASK();
   /* USER CODE END UART5_IRQn 0 */
   HAL_UART_IRQHandler(&huart5);
   /* USER CODE BEGIN UART5_IRQn 1 */
