@@ -23,6 +23,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "jy901p_uart.h"
+#include "ms5837_uart.h"
+
 #include "chat_with_upper.h"
 #include "transmit_power_board.h"
 #include "software_uart.h"
@@ -63,6 +65,8 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim10;
 extern TIM_HandleTypeDef htim11;
+extern DMA_HandleTypeDef hdma_uart4_rx;
+extern DMA_HandleTypeDef hdma_uart4_tx;
 extern DMA_HandleTypeDef hdma_uart5_rx;
 extern DMA_HandleTypeDef hdma_uart5_tx;
 extern DMA_HandleTypeDef hdma_usart1_rx;
@@ -73,6 +77,7 @@ extern DMA_HandleTypeDef hdma_usart3_rx;
 extern DMA_HandleTypeDef hdma_usart3_tx;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 extern DMA_HandleTypeDef hdma_usart6_tx;
+extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
 extern UART_HandleTypeDef huart1;
 extern UART_HandleTypeDef huart2;
@@ -211,6 +216,20 @@ void DMA1_Stream1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 stream2 global interrupt.
+  */
+void DMA1_Stream2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart4_rx);
+  /* USER CODE BEGIN DMA1_Stream2_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream2_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream3 global interrupt.
   */
 void DMA1_Stream3_IRQHandler(void)
@@ -222,6 +241,20 @@ void DMA1_Stream3_IRQHandler(void)
   /* USER CODE BEGIN DMA1_Stream3_IRQn 1 */
 
   /* USER CODE END DMA1_Stream3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream4 global interrupt.
+  */
+void DMA1_Stream4_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream4_IRQn 0 */
+
+  /* USER CODE END DMA1_Stream4_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_uart4_tx);
+  /* USER CODE BEGIN DMA1_Stream4_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream4_IRQn 1 */
 }
 
 /**
@@ -316,29 +349,7 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-    /* 1) 空闲检测 */
-    if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_IDLE))
-    {
-        __HAL_UART_CLEAR_IDLEFLAG(&huart2);
-
-        /* 2) 停 DMA，算长度 */
-        HAL_UART_DMAStop(&huart2);
-        uint16_t len = JY901_RX_BUFFER_SIZE
-                     - __HAL_DMA_GET_COUNTER(huart2.hdmarx);
-
-        /* 3) 打包并投队列 */
-        JY901_Msg_t msg;
-        msg.len = len;
-        memcpy(msg.data, jy901_rx_buffer, len);
-
-        BaseType_t awakened = pdFALSE;
-        xQueueSendFromISR(jy901Queue, &msg, &awakened);
-        portYIELD_FROM_ISR(awakened);
-        //HAL_UART_Transmit_DMA(&huart6, jy901_rx_buffer, len);
-        /* 4) 重启 DMA */
-        HAL_UART_Receive_DMA(&huart2, jy901_rx_buffer, JY901_RX_BUFFER_SIZE);
-    }
-
+  UART2_IT_TASK();
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */
@@ -352,24 +363,7 @@ void USART2_IRQHandler(void)
 void USART3_IRQHandler(void)
 {
   /* USER CODE BEGIN USART3_IRQn 0 */
-    /* 1) 空闲检测 */
-    if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE))
-    {
-        __HAL_UART_CLEAR_IDLEFLAG(&huart3);
-        /* 2) 停 DMA，算长度 */
-        HAL_UART_DMAStop(&huart3);
-        uint16_t len = PARSER_DMA_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart3.hdmarx);
-        /* 3) 打包并投队列 */
-        Parse_Msg_t buf;
-        buf.len = len;
-        memcpy(buf.data,parse_rx_buf,len);
-        BaseType_t awakened = pdFALSE;
-        xQueueSendFromISR(uart_rx_queue, &buf, &awakened);
-        portYIELD_FROM_ISR(awakened);
-        /* 4) 重启 DMA */
-        HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
-
-    }
+  UART3_IT_TASK();
   /* USER CODE END USART3_IRQn 0 */
   HAL_UART_IRQHandler(&huart3);
   /* USER CODE BEGIN USART3_IRQn 1 */
@@ -392,8 +386,23 @@ void DMA1_Stream7_IRQHandler(void)
 }
 
 /**
- * @brief This function handles UART5 global interrupt.
- */
+  * @brief This function handles UART4 global interrupt.
+  */
+void UART4_IRQHandler(void)
+{
+  /* USER CODE BEGIN UART4_IRQn 0 */
+  UART4_IT_TASK();
+
+  /* USER CODE END UART4_IRQn 0 */
+  HAL_UART_IRQHandler(&huart4);
+  /* USER CODE BEGIN UART4_IRQn 1 */
+
+  /* USER CODE END UART4_IRQn 1 */
+}
+
+/**
+  * @brief This function handles UART5 global interrupt.
+  */
 void UART5_IRQHandler(void)
 {
   /* USER CODE BEGIN UART5_IRQn 0 */

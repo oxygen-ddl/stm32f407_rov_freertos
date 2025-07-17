@@ -2,20 +2,25 @@
 #include "usart.h"    // CubeMX 生成的 huart4 句柄
 #include "stm32f4xx_hal.h"
 #include <string.h>
+#include "FreeRTOS.h"
+#include "task.h"
 
 
+UART4_Msg_t uart4_msg;
+uint8_t uart4_it_flag;
+uint8_t uart4_rx_buffer[UART4_DMA_BUF_SIZE];
 
 /* 协议里“温度”中文前缀的 GBK 编码 */
 static const uint8_t PREFIX_TEMP[4]  = {0xCE,0xC2,0xB6,0xC8};
 /* 协议里“深度”中文前缀的 GBK 编码 */
 static const uint8_t PREFIX_DEPTH[4] = {0xC9,0xEE,0xB6,0xC8};
 
-static uint8_t dma_rx_buf[UART4_DMA_BUF_SIZE];
 
 /* 解析结果 */
 float ms5837_temperature = 0.0f;
 float ms5837_depth       = 0.0f;
 float ms5837_pressure = 0.0f; 
+
 /**
  * @brief  从 buf 中以“前缀 + ':' + ASCII 数字 + '.' + ASCII 数字”格式解析一个数值
  * @param  buf   起始地址
@@ -81,9 +86,43 @@ void parse_frame(const uint8_t *buf, int len)
 void Parser4_Init(void)
 {
     // 启动 DMA 接收
-    HAL_UART_Receive_DMA(&huart4, dma_rx_buf, UART4_DMA_BUF_SIZE);
+    HAL_UART_Receive_DMA(&huart4, uart4_rx_buffer, UART4_DMA_BUF_SIZE);
     // 使能空闲中断
     __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
 }
 
+void UART4_IT_TASK(void)
+{
+    // 空闲检测
+    if (__HAL_UART_GET_FLAG(&huart4, UART_FLAG_IDLE))
+    {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart4);
+        // 停 DMA，算长度
+        HAL_UART_DMAStop(&huart4);
+        uint16_t len = UART4_DMA_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart4.hdmarx);
+
+        if (uart4_it_flag == 0)
+        {
+            uart4_msg.len = len;
+            memcpy(uart4_msg.data, uart4_rx_buffer, len);
+            uart4_it_flag = 1;
+        }
+        // 重启 DMA
+        HAL_UART_Receive_DMA(&huart4, uart4_rx_buffer, UART4_DMA_BUF_SIZE);
+    }
+}
+
+//
+void MS5837_ProcessTask(void *pvParameters)
+{
+    for (;;)
+    {
+        if (uart4_it_flag == 1)
+        {
+            parse_frame(uart4_msg.data, uart4_msg.len);
+            uart4_it_flag = 0;
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
 

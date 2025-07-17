@@ -27,12 +27,10 @@
 /* USER CODE BEGIN Includes */
 #include "jy901p_uart.h"
 #include "chat_with_upper.h"
-#include "ms5837_iic.h"
 #include "func_uart.h"
 #include "move_control.h"
 #include "ms5837_uart.h"
 #include "move_drv.h"
-#include "ath20_bmp280.h"
 #include "distance_measure.h"
 #include "transmit_power_board.h"
 
@@ -59,8 +57,9 @@
 osThreadId_t view_variables_TaskHandle; // 变量观测任务句柄
 osThreadId_t SendAllPack_TaskHandle; // 发送任务句柄
 osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
+osThreadId_t MS5837_Uart_TaskHandle; // MS5837 UART任务句柄
+
 osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
-osThreadId_t MS5837_IIC_TaskHandle; // MS5837 IIC任务句柄
 osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
 osThreadId_t tuigan_TaskHandle;
 osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
@@ -88,20 +87,14 @@ const osThreadAttr_t Jy901p_Uart_attributes = {
   .priority = (osPriority_t) osPriorityLow2,
 };
 
-const osThreadAttr_t Move_Control_attributes = {
-  .name = "Move_Control",
+const osThreadAttr_t MS5837_Uart_attributes = {
+  .name = "MS5837_Uart",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow2,
 };
 
-const osThreadAttr_t MS5837_IIC_attributes = {
-  .name = "MS5837_IIC",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow1,
-};
-
-const osThreadAttr_t ath20_bmp280_attributes = {
-  .name = "Ath20_Bmp280",
+const osThreadAttr_t Move_Control_attributes = {
+  .name = "Move_Control",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow2,
 };
@@ -211,12 +204,12 @@ void MX_FREERTOS_Init(void) {
   //tuigan_TaskHandle = osThreadNew(pull_use_electric,NULL,&tuigan_attributes);
 
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
+
+  MS5837_Uart_TaskHandle = osThreadNew(MS5837_ProcessTask, NULL, &MS5837_Uart_attributes); // 启动MS5837 UART任务
   
   SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送任务 
 
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
-
-  Ath20_Bmp280_TaskHandle = osThreadNew(Sensors_Task, NULL, &ath20_bmp280_attributes); // 启动气压计与温度计任务
 
   Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
 
@@ -228,9 +221,6 @@ void MX_FREERTOS_Init(void) {
 
 
 
-
-
-  
 
 
   /* USER CODE END RTOS_THREADS */

@@ -48,14 +48,11 @@ stm32f407_rov_freertos\freertos.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/chat_with_upper.h
-stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_iic.h
-stm32f407_rov_freertos\freertos.o: ../Core/Inc/i2c.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/func_uart.h
 stm32f407_rov_freertos\freertos.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\stdbool.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_control.h
 stm32f407_rov_freertos\freertos.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/move_drv.h
-stm32f407_rov_freertos\freertos.o: ../Source/Inc/ath20_bmp280.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/distance_measure.h
 stm32f407_rov_freertos\freertos.o: ../Source/Inc/transmit_power_board.h

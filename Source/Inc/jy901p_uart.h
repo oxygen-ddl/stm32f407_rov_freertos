@@ -20,20 +20,13 @@ extern int turns_of_pitch, turns_of_roll, turns_of_yaw;
 /** 队列最大深度 */
 #define JY901_RX_QUEUE_LEN    5
 
-/** 队列消息：一帧数据及其长度 */
 typedef struct {
     uint8_t  data[JY901_RX_BUFFER_SIZE];
     uint16_t len;
 } JY901_Msg_t;
 
-
-extern uint8_t    jy901_rx_buffer[JY901_RX_BUFFER_SIZE];
-extern QueueHandle_t jy901Queue;
-/**
- * @brief  初始化 JY901 串口（USART2）DMA + IDLE + Queue，创建处理任务
- * @note   在 HAL 库与 USART2 初始化完成后调用
- */
 void JY901_UART_Init(void);
 void JY901_ProcessTask(void *pvParameters);
+void UART2_IT_TASK(void);
 
 #endif /* JY901P_UAYRT_H */

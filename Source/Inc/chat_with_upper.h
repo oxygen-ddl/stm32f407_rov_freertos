@@ -64,9 +64,8 @@ void SendAllPack_Task(void *pvParameters);
 void Parser_Init(void);
 void parsePacket(uint8_t *buf, uint16_t len);
 void Parse_Task(void *pvParameters);
+void UART3_IT_TASK(void);
 
-extern uint8_t parse_rx_buf[PARSER_DMA_BUF_SIZE];
-extern QueueHandle_t uart_rx_queue;
 
 
 

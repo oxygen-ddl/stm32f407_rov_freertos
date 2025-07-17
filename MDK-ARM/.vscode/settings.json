@@ -28,6 +28,7 @@
         "string": "c",
         "string_view": "c",
         "span": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "ms5837_uart.h": "c"
     }
 }

@@ -46,6 +46,7 @@ stm32f407_rov_freertos\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Sourc
 stm32f407_rov_freertos\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 stm32f407_rov_freertos\stm32f4xx_it.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\stm32f4xx_it.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
+stm32f407_rov_freertos\stm32f4xx_it.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\stm32f4xx_it.o: ../Source/Inc/chat_with_upper.h
 stm32f407_rov_freertos\stm32f4xx_it.o: ../Source/Inc/transmit_power_board.h
 stm32f407_rov_freertos\stm32f4xx_it.o: ../Source/Inc/software_uart.h

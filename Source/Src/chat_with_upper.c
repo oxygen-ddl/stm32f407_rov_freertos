@@ -10,9 +10,13 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "string.h"
-#include "semphr.h"
 extern float accx, accy, accz, angx, angy, angz, magx, magy, magz; // 来自jy901p_uart.h
 extern float roll, pitch, yaw, temperature_jy901p;                 // 来自jy901p_uart.h
+
+uint8_t parse_rx_buf[PARSER_DMA_BUF_SIZE];
+uint8_t uart3_it_flag = 0;   // 0表示没有新数据，1表示有新数据的到来
+Parse_Msg_t uart3_msg; // 作为全局变量，在中断与处理函数中传递接收到的数据以及长度
+
 
 // 发送
 typedef union
@@ -263,17 +267,9 @@ void parsePacket(uint8_t *buf, uint16_t len)
     }
 }
 
-uint8_t parse_rx_buf[PARSER_DMA_BUF_SIZE];
-QueueHandle_t uart_rx_queue;
-
 /* 在 freeRTOS init 里调用一次 */
 void Parser_Init(void)
 {
-    uart_rx_queue = xQueueCreate(PARSER_DMA_BUF_SIZE,sizeof(uint8_t));
-    if (uart_rx_queue == NULL)
-    {
-        Error_Handler();
-    }
     
     //启动dma接收
     HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
@@ -285,15 +281,35 @@ void Parser_Init(void)
 
 void Parse_Task(void *pvParameters)
 {
-    Parse_Msg_t buf_temp;
     for (;;)
     {
-        if (xQueueReceive(uart_rx_queue,&buf_temp,portMAX_DELAY) == pdPASS)
+        if (uart3_it_flag == 1)
         {
-            parsePacket(buf_temp.data,buf_temp.len);
+            parsePacket(uart3_msg.data,uart3_msg.len);
+            uart3_it_flag = 0;
         }
-        
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
-    
+}
+
+void UART3_IT_TASK(void)
+{
+    // 空闲检测
+    if (__HAL_UART_GET_FLAG(&huart3, UART_FLAG_IDLE))
+    {
+        __HAL_UART_CLEAR_IDLEFLAG(&huart3);
+        // 停 DMA，算长度
+        HAL_UART_DMAStop(&huart3);
+        uint16_t len = PARSER_DMA_BUF_SIZE - __HAL_DMA_GET_COUNTER(huart3.hdmarx);
+
+        if (uart3_it_flag == 0)
+        {
+            uart3_msg.len = len;
+            memcpy(uart3_msg.data, parse_rx_buf, len);
+            uart3_it_flag = 1;
+        }
+        // 重启 DMA 
+        HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
+    }
 }
 
