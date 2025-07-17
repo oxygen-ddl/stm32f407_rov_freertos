@@ -17,8 +17,7 @@ extern int turns_of_pitch, turns_of_roll, turns_of_yaw;
       	
 /** 接收缓冲区长度 */
 #define JY901_RX_BUFFER_SIZE  64
-/** 队列最大深度 */
-#define JY901_RX_QUEUE_LEN    5
+
 
 typedef struct {
     uint8_t  data[JY901_RX_BUFFER_SIZE];

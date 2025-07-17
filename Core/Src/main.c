@@ -29,6 +29,8 @@
 /* USER CODE BEGIN Includes */
 #include "move_drv.h"
 #include "move_control.h"
+#include "shtc3.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -114,6 +116,9 @@ int main(void)
   pwm_set(3,2,1000);
   //pwm_set(3,3,100);//灯
   HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_SET);//低电平触发
+  Sthc3SensorI2c_Init();
+
+  
   /* USER CODE END 2 */
 
   /* Init scheduler */

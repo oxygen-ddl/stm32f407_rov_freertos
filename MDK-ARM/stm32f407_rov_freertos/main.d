@@ -53,3 +53,4 @@ stm32f407_rov_freertos\main.o: ../Source/Inc/move_drv.h
 stm32f407_rov_freertos\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
 stm32f407_rov_freertos\main.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 stm32f407_rov_freertos\main.o: ../Source/Inc/move_control.h
+stm32f407_rov_freertos\main.o: ../Source/Inc/shtc3.h

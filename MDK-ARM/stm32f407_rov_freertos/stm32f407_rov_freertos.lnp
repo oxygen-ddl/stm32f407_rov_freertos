@@ -42,6 +42,7 @@
 "stm32f407_rov_freertos\ms5837_uart.o"
 "stm32f407_rov_freertos\pid.o"
 "stm32f407_rov_freertos\software_uart.o"
+"stm32f407_rov_freertos\shtc3.o"
 "stm32f407_rov_freertos\croutine.o"
 "stm32f407_rov_freertos\event_groups.o"
 "stm32f407_rov_freertos\list.o"

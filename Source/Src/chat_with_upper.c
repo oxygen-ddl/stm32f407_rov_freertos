@@ -5,6 +5,8 @@
 #include "distance_measure.h"
 #include "ath20_bmp280.h"
 #include "move_control.h"
+#include "shtc3.h"
+
 
 #include "usart.h"
 #include "FreeRTOS.h"
@@ -108,10 +110,10 @@ void data_packup(uint8_t startbit)
         break;
 
     case (TX_StartBit_TEM_WET):
-        conv[0].value = bmp280_pressure;
-        conv[1].value = bmp280_temperature;
-        conv[2].value = ath20_humidity;
-        conv[3].value = ath20_temperature;
+        conv[0].value = sthc3_temperature;//主控温度
+        conv[1].value = sthc3_humidity;//主控湿度
+        conv[2].value = (float)temperature_power_board;//电源温度
+        conv[3].value = (float)RH_power_board;//电源湿度
 
         float_pack(4, 16, TX_StartBit_TEM_WET, buf, conv);
         HAL_UART_Transmit(&huart3, buf, 20, 100); // 发送数据包到上位机

@@ -29,6 +29,7 @@
         "string_view": "c",
         "span": "c",
         "stdio.h": "c",
-        "ms5837_uart.h": "c"
+        "ms5837_uart.h": "c",
+        "shtc3.h": "c"
     }
 }

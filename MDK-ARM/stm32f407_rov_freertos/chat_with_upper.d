@@ -51,5 +51,6 @@ stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/distance_measure.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/ath20_bmp280.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/move_control.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/shtc3.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/usart.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/main.h

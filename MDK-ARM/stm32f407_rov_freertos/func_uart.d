@@ -60,3 +60,4 @@ stm32f407_rov_freertos\func_uart.o: ../Source/Inc/chat_with_upper.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/ms5837_uart.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/ath20_bmp280.h
 stm32f407_rov_freertos\func_uart.o: ../Source/Inc/transmit_power_board.h
+stm32f407_rov_freertos\func_uart.o: ../Source/Inc/shtc3.h
