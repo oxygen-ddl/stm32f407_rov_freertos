@@ -77,7 +77,7 @@ static void float_pack(int num_data, int length, uint8_t data_ID, uint8_t buf[],
 
 void data_packup(uint8_t startbit)
 {
-    uint8_t buf[S_PACKAGE_LEN] = {0};
+    uint8_t buf[SEND_BUF_SIZE] = {0};
 
     // 用于拆分数据
     U_FloatData conv[10];
@@ -222,50 +222,72 @@ void parsePacket(uint8_t *buf, uint16_t len)
     switch (id)
     {
     case RX_StartBit_Handle_basic: // 0xB1, N == 12
-        handle.go    = (int16_t)((p[1]<<8)|p[0]);
-        handle.move  = (int16_t)((p[3]<<8)|p[2]);
-        handle.up    = (int16_t)((p[5]<<8)|p[4]);
-        handle.yaw   = (int16_t)((p[7]<<8)|p[6]);
-        handle.pitch = (int16_t)((p[9]<<8)|p[8]);
-        handle.roll  = (int16_t)((p[11]<<8)|p[10]);
+        handle.go = (int16_t)((p[1] << 8) | p[0]);
+        handle.move = -(int16_t)((p[3] << 8) | p[2]);
+        handle.up = (int16_t)((p[5] << 8) | p[4]);
+        handle.yaw = -(int16_t)((p[7] << 8) | p[6]);
+        handle.pitch = (int16_t)((p[9] << 8) | p[8]);
+        handle.roll = (int16_t)((p[11] << 8) | p[10]);
         // 更新外部变量
         go_forward = handle.go;
-        go_left    = handle.move;
-        go_up      = handle.up;
-        move_yaw   = handle.yaw;
+        go_left = handle.move;
+        go_up = handle.up;
+        move_yaw = handle.yaw;
         move_pitch = handle.pitch;
-        move_roll  = handle.roll;
+        move_roll = handle.roll;
         break;
 
-    case RX_StartBit_Handle_light: 
-        light.on = (int16_t)((p[1]<<8)|p[0]);
-        mode.lockangle = (int16_t)((p[3]<<8)|p[2]);
-        mode.unknow = (int16_t)((p[5]<<8)|p[4]);
-        mode.autotrip = (int16_t)((p[7]<<8)|p[6]);
-        mode.defogging = (int16_t)((p[9]<<8)|p[8]);
-        mode.electromagnet = (int16_t)((p[11]<<8)|p[10]);
-        mode.push_rod = (int16_t)((p[13]<<8)|p[12]);
-        mode.autovertical = (int16_t)((p[15]<<8)|p[14]);
+    case RX_StartBit_Handle_light:
+        light.on = (int16_t)((p[1] << 8) | p[0]);//开灯
+        mode.lockangle = (int16_t)((p[3] << 8) | p[2]);//姿态锁
+        mode.unknow = (int16_t)((p[5] << 8) | p[4]);//解锁电机
+        mode.autotrip = (int16_t)((p[7] << 8) | p[6]);//开启定速
+
+        mode.electromagnet = (int16_t)((p[9] << 8) | p[8]);//电磁铁
+        mode.push_rod = (int16_t)((p[11] << 8) | p[10]);//推杆
+        mode.autovertical = (int16_t)((p[13] << 8) | p[12]);//自动对正
+        mode.defogging = (int16_t)((p[15] << 8) | p[14]);//翻滚
 
         break;
 
     case RX_StartBit_PID: // 0xC1, N == 6*2*2 + ... 根据协议
         // 示例：第一个 float 占 4 字节，依次解析...
-        for (uint8_t i = 0; i < 8; i++)
+        // 1) 解析 8 路输入 PID
+        for (uint8_t u = 0; u < 8; ++u)
         {
-            uint32_t tmp = ((uint32_t)p[i*4+3]<<24) |
-                           ((uint32_t)p[i*4+2]<<16) |
-                           ((uint32_t)p[i*4+1]<<8 ) |
-                           ((uint32_t)p[i*4+0]<<0 );
-            pid_in_parameter[i].parameter.kp = *(float*)&tmp;
-            // 类似解析 ki、kd...
+            pid_in_parameter[u].parameter.kp = float_convert(p, 0, 3);
+            pid_in_parameter[u].parameter.ki = float_convert(p, 4, 7);
+            pid_in_parameter[u].parameter.kd = float_convert(p, 8, 11);
         }
-        break;
+        // 2) 解析 6 路输出 PID
+        for (uint8_t i = 0; i < 6; ++i)
+        {
 
-    // ... 其它 ID 按需添加 ...
+            pid_out_parameter[i].parameter.kp = float_convert(p, i * 12 + 0, i * 12 + 3);
+            pid_out_parameter[i].parameter.ki = float_convert(p, i * 12 + 4, i * 12 + 7);
+            pid_out_parameter[i].parameter.kd = float_convert(p, i * 12 + 8, i * 12 + 11);
+        }
+        // 3) 解析 深度 PID
+        pid_depth.kp = float_convert(p, 84, 90);
+        pid_depth.ki = float_convert(p, 91, 94);
+        pid_depth.kd = float_convert(p, 95, 98);
+        break;
 
     default:
         break;
+    }
+}
+
+
+//解析多帧数据组合
+void Parse_Packets(uint8_t *buf, uint16_t len)
+{
+    for (uint8_t i = 0; i < len; i++)
+    {
+        if (buf[i] == 0xFF)
+        {
+            parsePacket((buf+i),(len-i));
+        }   
     }
 }
 
@@ -287,10 +309,10 @@ void Parse_Task(void *pvParameters)
     {
         if (uart3_it_flag == 1)
         {
-            parsePacket(uart3_msg.data,uart3_msg.len);
+            Parse_Packets(uart3_msg.data,uart3_msg.len);
             uart3_it_flag = 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
 
@@ -310,6 +332,7 @@ void UART3_IT_TASK(void)
             memcpy(uart3_msg.data, parse_rx_buf, len);
             uart3_it_flag = 1;
         }
+        //HAL_UART_Transmit_DMA(&huart6,parse_rx_buf,len);
         // 重启 DMA 
         HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
     }

@@ -58,6 +58,7 @@
 /* USER CODE BEGIN Variables */
 osThreadId_t view_variables_TaskHandle; // 变量观测任务句柄
 osThreadId_t SendAllPack_TaskHandle; // 发送任务句柄
+osThreadId_t Parse_Task_TaskHandle; // 解析上位机任务句柄
 osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
 osThreadId_t MS5837_Uart_TaskHandle; // MS5837 UART任务句柄
 osThreadId_t SHTC3_IIC_TaskHandle; //SHTC3 IIC任务句柄
@@ -82,6 +83,12 @@ const osThreadAttr_t SendAllPack_attributes = {
   .name = "SendAllPack",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow3,
+};
+
+const osThreadAttr_t Parse_Task_attributes = {
+  .name = "Parse_Task",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 const osThreadAttr_t Jy901p_Uart_attributes = {
@@ -220,15 +227,18 @@ void MX_FREERTOS_Init(void) {
   
   SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送给上位机任务 
 
+  Parse_Task_TaskHandle = osThreadNew(Parse_Task, NULL,&Parse_Task_attributes);         // 启动解析上位机数据
+
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
   Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
 
   //Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
 
-  Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);//启动发送给电源板数据任务
+  Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);  //启动发送给电源板数据任务
 
-  Parse_Power_Board_TaskHandle = osThreadNew(Uart5_Parse_Task,NULL,&parse_power_handle_attributes);//启动解析电源板数据任务
+  Parse_Power_Board_TaskHandle = osThreadNew(Uart5_Parse_Task,NULL,&parse_power_handle_attributes);   //启动解析电源板数据任务
+
 
 
 

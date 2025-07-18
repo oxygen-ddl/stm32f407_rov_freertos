@@ -3,7 +3,7 @@
 
 #include "stm32f4xx_hal.h"
 
-#define power_board_max_len 256
+#define power_board_max_len 64
 typedef struct
 {
     uint8_t data[power_board_max_len];
@@ -20,6 +20,7 @@ void UART5_IT_TASK(void);
 extern uint16_t current_adc_data[9];    //8个推进器电流+总电流
 extern uint16_t adc_data_after_filter[9];
 extern uint16_t motor_current_actual[8];   //adc采集的推进器电流数据，由电源板采集后传入主控
+
 extern float temperature_power_board;
 extern float RH_power_board;
 

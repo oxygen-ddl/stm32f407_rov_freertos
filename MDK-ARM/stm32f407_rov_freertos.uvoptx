@@ -158,12 +158,7 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>uart5_buf</ItemText>
-        </Ww>
-        <Ww>
-          <count>1</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>current_adc_data</ItemText>
+          <ItemText>uart3_msg</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

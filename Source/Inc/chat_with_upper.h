@@ -24,8 +24,6 @@
 #endif
 
 
-#define S_PACKAGE_LEN                         50          //发送缓冲区长度
-#define R_PACKAGE_LEN                         40          //接收缓冲区长度
 
 
 #define TX_StartBit_ACC                     0xA1        //向上位机传输jy901s数据
@@ -39,17 +37,12 @@
 #define RX_StartBit_PID                     0xC6       //下位机接收pid参数
 /***       手柄            ***/
 #define RX_StartBit_Handle_basic            0xB1        //下位机接收手柄基本运动数据
-#define RX_StartBit_Handle_light            0xB2        //下位机接收手柄照明数据
-#define RX_StartBit_Handle_func_lockangle   0xB3        //下位机接收按键功能控制-锁定角度
-#define RX_StartBit_Handle_func_start_move      0xB4        //下位机接收按键功能控制-开启运动
-#define RX_StartBit_Handle_func_autotrip      0xB5       //下位机接收按键功能控制-定速
-#define RX_StartBit_Handle_func_electromagnet  0xB6     // 下位机接收按键功能控制-电磁铁
-#define RX_StartBit_Handle_func_push_rod  0xB7          // 下位机接收按键功能控制-推杆
-#define RX_StartBit_Handle_func_autorolling   0xB8       // 下位机接收按键功能控制-自动对正
+#define RX_StartBit_Handle_light            0xB2        //下位机接收手柄功能按键数据
 
 #define RX_StartBit_Handle_func_defogging     0xC5
 
 #define PARSER_DMA_BUF_SIZE   256   // DMA 缓冲区大小，>= 你可能一帧的最大长度
+#define SEND_BUF_SIZE    128
 
 typedef struct
 {
@@ -62,7 +55,6 @@ typedef struct
 
 void SendAllPack_Task(void *pvParameters);
 void Parser_Init(void);
-void parsePacket(uint8_t *buf, uint16_t len);
 void Parse_Task(void *pvParameters);
 void UART3_IT_TASK(void);
 
