@@ -35,6 +35,7 @@
 #include "move_drv.h"
 #include "distance_measure.h"
 #include "transmit_power_board.h"
+#include "software_uart.h"
 
 
 /* USER CODE END Includes */
@@ -186,6 +187,7 @@ void MX_FREERTOS_Init(void) {
   Parser4_Init(); // 启动MS5837 UART解析任务
   Move_basic_Init();
   Uart5_Parse_Init();
+  SoftUART_Init();
   
   /* USER CODE END Init */
 
@@ -233,7 +235,7 @@ void MX_FREERTOS_Init(void) {
 
   Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
 
-  //Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
+  Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
 
   Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);  //启动发送给电源板数据任务
 

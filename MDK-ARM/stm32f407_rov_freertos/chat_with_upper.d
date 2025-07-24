@@ -33,6 +33,7 @@ stm32f407_rov_freertos\chat_with_upper.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/st
 stm32f407_rov_freertos\chat_with_upper.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
+stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Core/Inc/FreeRTOSConfig.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
@@ -43,7 +44,6 @@ stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/So
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
-stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/jy901p_uart.h
 stm32f407_rov_freertos\chat_with_upper.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/transmit_power_board.h
 stm32f407_rov_freertos\chat_with_upper.o: ../Source/Inc/ms5837_uart.h

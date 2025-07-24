@@ -50,22 +50,6 @@ static void send_data_assembly(void)
     Tx_buffer_5[i] = electronic_switch[0] + electronic_switch[2] + electronic_switch[7] + 0xaf;
     Tx_buffer_5[i + 2] = 0xff;
 }
-// 数据发送——通过串口5
-void switch_Process_Task(void *pvParameters)
-{
-    switch_send_flag = 0;
-    for (;;)
-    {
-        while (switch_send_flag == 0)
-        {
-            send_data_assembly();
-            HAL_UART_Transmit_DMA(&huart5, Tx_buffer_5, 13);
-            vTaskDelay(pdMS_TO_TICKS(200));
-        }
-        vTaskDelay(pdMS_TO_TICKS(200));
-    }
-}
-
 /*
  * @brief  解析一段缓存区里的完整帧（帧头 0xAA，帧尾 0xFF）
  * @param  buf    指向接收到的数据数组
@@ -268,7 +252,9 @@ void light_switch_set(uint8_t data)
     HAL_UART_Transmit_DMA(&huart5, Tx_buffer_5, sizeof(Tx_buffer_5));
 }
 
-/************************************************************数据解析********************************************************************* */
+/************************************************************数据发送解析任务********************************************************************* */
+#include "move_control.h"
+
 uint8_t uart5_buf[power_board_max_len];
 
 void Uart5_Parse_Init(void)
@@ -276,11 +262,39 @@ void Uart5_Parse_Init(void)
     HAL_UART_Receive_DMA(&huart5, uart5_buf, power_board_max_len);
     __HAL_UART_ENABLE_IT(&huart5, UART_IT_IDLE);
 }
-
+S_mode mode_last = {0};
+//对电子开关进行设置，同时对接收到的上位机控制命令下达
 void Uart5_Parse_Task(void *pvParameters)
 {
+    motor_switch_set(1);
+    mode.light_on = 0x2;
     for (;;)
     {
+        //开关灯设置
+        if (mode.light_on != mode_last.light_on)
+        {
+            if (mode.light_on == 0x01)
+            {
+                light_switch_set(1);
+            }
+            else
+            {
+                light_switch_set(0);
+            }
+            mode_last.light_on = mode.light_on;
+        }
+        if (mode_last.unlock != mode.unlock)
+        {
+            if (mode.unlock == 0x01)
+            {
+                motor_switch_set(1);
+            }
+            else
+            {
+                motor_switch_set(0);
+            }
+        }
+        
         if (uart5_it_flag == 1)
         {
             parsePowerBoardFrame(uart5_msg.data,uart5_msg.len);
@@ -289,6 +303,22 @@ void Uart5_Parse_Task(void *pvParameters)
             uart5_it_flag = 0;
         }
         vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+// 数据发送——通过串口5
+void switch_Process_Task(void *pvParameters)
+{
+    switch_send_flag = 0;
+    for (;;)
+    {
+        while (switch_send_flag == 0)
+        {
+            send_data_assembly();
+            HAL_UART_Transmit_DMA(&huart5, Tx_buffer_5, 13);
+            vTaskDelay(pdMS_TO_TICKS(200));
+        }
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 

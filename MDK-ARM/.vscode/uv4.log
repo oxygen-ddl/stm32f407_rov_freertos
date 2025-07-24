@@ -1,3 +1,4 @@
 Load "stm32f407_rov_freertos\\stm32f407_rov_freertos.axf" 
-Erase Done.Programming Done.Verify OK.Application running ...
-Flash Load finished at 16:34:30
+RDDI-DAP Error
+Error: Flash Download failed  -  Target DLL has been cancelled
+Flash Load finished at 20:23:14

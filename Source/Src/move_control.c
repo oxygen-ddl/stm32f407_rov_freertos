@@ -22,7 +22,6 @@ pid_set pid_out_parameter[6];
 pid_set pid_in_parameter[8]; // 内环电流控制参数，按设定推进器编号排布
 pid_set depth_pid;
 //功能
-S_light light = {0};
 S_mode mode = {0};
 S_pid_depth pid_depth = {0};
 
@@ -78,6 +77,7 @@ static void Pid_Out_Calculate(void *pvParameters)
         }
         // 进行pid运算
         pid_out_parameter[i].out_data = pid_out_parameter[i].parameter.kp * pid_out_parameter[i].err + pid_out_parameter[i].parameter.ki * pid_out_parameter[i].integral_value + pid_out_parameter[i].parameter.kd * (pid_out_parameter[i].err - pid_out_parameter[i].err_last);
+        
         // 对运算结果进行限幅
         if (pid_out_parameter[i].out_data > pid_out_parameter[i].out_data_limit)
         {
@@ -90,6 +90,7 @@ static void Pid_Out_Calculate(void *pvParameters)
         // 更新上次差值
         pid_out_parameter[i].err_last = pid_out_parameter[i].err;
     }
+    //对平动进行控制
     for (uint8_t i = 0 + 3; i < 3 + 3; ++i)
     {
         // 进行pd运算
@@ -106,6 +107,8 @@ static void Pid_Out_Calculate(void *pvParameters)
         // 更新上次差值
         pid_out_parameter[i].err_last = pid_out_parameter[i].err;
     }
+
+
     /*定深pd*/
     if (depth_target_value != 0)
     {
@@ -142,7 +145,8 @@ static void Pid_Out_Calculate(void *pvParameters)
     // 0-翻滚 1-俯仰
     static float a, b, c;
     a = 1;
-    b = 1, c = 1;
+    b = 1;
+    c = 1;
     // 判断roll
     if (roll > 45 || roll < -45)
     {
@@ -153,8 +157,10 @@ static void Pid_Out_Calculate(void *pvParameters)
     else
     {
         a = 1;
-        b = 1, c = 1;
+        b = 1,
+        c = 1;
     }
+    
     pid_in_parameter[0].out_data = +pid_out_parameter[0].out_data - a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data; // 推进器电流期望值
     pid_in_parameter[1].out_data = -pid_out_parameter[0].out_data - a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data;
     pid_in_parameter[2].out_data = +pid_out_parameter[0].out_data + a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data;
@@ -166,6 +172,8 @@ static void Pid_Out_Calculate(void *pvParameters)
 
     motor_output();
 }
+
+
 // 用于校准方向
 void rov_move_uppper_process(void *pvParameters)
 {
@@ -282,6 +290,10 @@ void motor_init(void)
 SemaphoreHandle_t xTimer11Semaphore = NULL;
 SemaphoreHandle_t xTimer14Semaphore = NULL;
 
+//! 对于rov的控制，控制频率几十到一百多就可以了
+//采用14定时器处理上位机数据
+// 采用11定时器处理PID数据，并输出到推进器
+
 void Move_Control_Task(void *pvParameters)
 {
     /* 创建信号量，供 TIM 回调给 PID 线程发信号 */
@@ -334,6 +346,13 @@ void Move_Control_Task(void *pvParameters)
     }    
 }
 
+//! 现在对pid数据的编号进行定义
+
+// 0-roll 1-pitch 2-yaw 3-向前 4-左移 5-向上（正方向定义）
+//actual_value为加入运算
+//特别注意翻滚数据突变带来的影响
+
+//用来处理控制数据的线程
 void thread_handle_ctrl_process_entry(void *pvParameters)
 {
     for (;;)
@@ -345,29 +364,29 @@ void thread_handle_ctrl_process_entry(void *pvParameters)
             {
                 pid_out_parameter[0].target_value += (float)move_roll*0.04f;
             }
-            else
-            {
-                turns_of_roll=0;
-                
-                pid_out_parameter[0].target_value=roll_target;
-            }
             if (fabsf(move_pitch)>10)
             {
                 pid_out_parameter[1].target_value += (float)move_pitch*0.04f;
-            }
-            else
-            {
-                
-                pid_out_parameter[1].target_value=pitch_target;
             }
             if (fabsf(move_yaw)>10)
             {
                 pid_out_parameter[2].target_value += (float)move_yaw*0.04f;
             }
-            else
-            {   
-                pid_out_parameter[2].target_value=yaw_target;
+
+            if (fabsf(go_forward)>10)
+            {
+                pid_out_parameter[4].target_value += (float)go_forward*0.04f;
             }
+            if (fabsf(go_left)>10)
+            {
+                pid_out_parameter[5].target_value += (float)go_left*0.04f;
+            }
+            if (fabsf(go_up)>10)
+            {
+                pid_out_parameter[3].target_value += (float)go_up*0.04f;
+            }
+
+            
             
         }
 

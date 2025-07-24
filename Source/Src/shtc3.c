@@ -36,7 +36,7 @@ uint8_t Sthc3WriteByte(uint16_t Cmd)
 
     if (HAL_I2C_Master_Transmit(&hi2c2, (uint16_t)SHTC3_CMD_DEV_WRITE, (uint8_t *)&WriteCmd, sizeof(WriteCmd), 1000) != HAL_OK)
     {
-        Error_Handler();
+        //Error_Handler();
         printf("err (L=%d)\n", __LINE__);
     }
     while (HAL_I2C_GetState(&hi2c2) != HAL_I2C_STATE_READY)
@@ -54,7 +54,8 @@ uint16_t Sthc3ReadWord(uint16_t Cmd)
 
     if (HAL_I2C_Master_Transmit(&hi2c2, (uint16_t)SHTC3_CMD_DEV_WRITE, (uint8_t *)WriteCmd, sizeof(WriteCmd), 1000) != HAL_OK)
     {
-        Error_Handler();
+        //Error_Handler();
+        printf("err (L=%d)\n", __LINE__);
     }
 
     while (HAL_I2C_GetState(&hi2c2) != HAL_I2C_STATE_READY)
@@ -62,7 +63,8 @@ uint16_t Sthc3ReadWord(uint16_t Cmd)
 
     if (HAL_I2C_Master_Receive(&hi2c2, SHTC3_CMD_DEV_READ, (uint8_t *)&ReadData, 2, 1000) != HAL_OK) // 接收word数据
     {
-        Error_Handler();
+        //Error_Handler();
+        printf("err (L=%d)\n", __LINE__);
     }
     return ReadData;
 }

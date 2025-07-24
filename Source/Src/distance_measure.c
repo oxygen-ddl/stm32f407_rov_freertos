@@ -6,22 +6,10 @@
 // 由超声波避障传感器测量的距离数据
 float wave_distance[2] = {0.0f, 0.0f};
 
-SoftUART_Handle_t muart_2, muart_3;
 
-void soft_uart_init(void)
-{
+uint8_t ch_0;
+uint8_t ch_1;
 
-   SoftUART_Config_t cfg2 = {
-       .rxPort = GPIOC, .rxPin = GPIO_PIN_0, .txPort = GPIOC, .txPin = GPIO_PIN_1, .baudrate = 115200};
-   SoftUART_Config_t cfg3 = {
-       .rxPort = GPIOC, .rxPin = GPIO_PIN_2, .txPort = GPIOC, .txPin = GPIO_PIN_3, .baudrate = 115200};
-
-   // 使用软件串口，节省资源消耗，基本上不使用tx发送功能，主要就是接收功能
-   muart_2 = SoftUART_Init(&cfg2);
-   muart_3 = SoftUART_Init(&cfg3);
-}
-
-uint8_t c = 0;
 uint8_t muart2_cnt = 0;
 uint8_t muart3_cnt = 0;
 uint8_t muart2_rx_buf[5] = {0};
@@ -33,14 +21,15 @@ void Handle_Muart_Task(void *pvParameters)
    for (;;)
    {
 
-       if (SoftUART_ReceiveByte(muart_2, &c, 100))
+       if (SoftUART_GetChar(&ch_0, 0))
        {
-           if (c != 0xff)
+            //SoftUART_PutChar(0,ch_0);//回调测试
+           if (ch_0 != 0xff)
            {
                muart2_cnt = 0;
                continue;
            }
-           muart2_rx_buf[muart2_cnt++] = c;
+           muart2_rx_buf[muart2_cnt++] = ch_0;
            if (muart2_cnt < 4)
            {
                continue;
@@ -54,14 +43,14 @@ void Handle_Muart_Task(void *pvParameters)
                }
            }
        }
-       if (SoftUART_ReceiveByte(muart_3, &c, 100))
+       if (SoftUART_GetChar(&ch_1, 1))
        {
-           if (c != 0xff)
+           if (ch_1 != 0xff)
            {
                muart3_cnt = 0;
                continue;
            }
-           muart3_rx_buf[muart3_cnt++] = c;
+           muart3_rx_buf[muart3_cnt++] = ch_1;
            if (muart3_cnt < 4)
            {
                continue;
@@ -75,7 +64,7 @@ void Handle_Muart_Task(void *pvParameters)
                }
            }
        }
-       vTaskDelay(pdMS_TO_TICKS(1));
+       vTaskDelay(pdMS_TO_TICKS(10));
 
    }
 }

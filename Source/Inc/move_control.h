@@ -38,29 +38,18 @@ typedef struct
      int16_t roll;
 }S_handle;
 
-
 typedef struct
 {
-     int16_t up;
-     int16_t down;
-}S_up;
+     uint8_t lockangle;//姿态锁定
+     uint8_t autotrip;//开启定速
+     uint8_t autovertical;//自动对正
+     uint8_t autorolling;//翻滚
+     uint8_t defogging;//待定
+     uint8_t unlock;//开启电机
+     uint8_t electromagnet;//电磁铁
+     uint8_t push_rod;//推杆
+     uint8_t light_on;//开启灯光
 
-typedef struct
-{
-     uint8_t on;
-     uint8_t off;
-}S_light;
-
-typedef struct
-{
-     uint8_t lockangle;
-     uint8_t autotrip;
-     uint8_t autovertical;
-     uint8_t autorolling;
-     uint8_t defogging;
-     uint8_t unknow;
-     uint8_t electromagnet;
-     uint8_t push_rod;
 }S_mode;
 
 typedef struct
@@ -97,8 +86,6 @@ extern int16_t move_yaw;
 extern int16_t move_pitch;
 extern int16_t move_roll;
 
-
-extern S_light light;
 extern S_mode mode;
 extern S_pid_depth pid_depth;
 

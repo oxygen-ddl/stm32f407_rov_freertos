@@ -2,8 +2,7 @@
 #define CHAT_WITH_UPPER_H
 
 #include "stm32f4xx_hal.h"
-#include "FreeRTOS.h"
-#include "queue.h"
+
 
 #define USER_MAIN_DEBUG    //不需要打印信息时时注释掉该行宏
 
@@ -22,9 +21,6 @@
   #define user_main_debug(format, ...)
   #define user_main_error(format,...)
 #endif
-
-
-
 
 #define TX_StartBit_ACC                     0xA1        //向上位机传输jy901s数据
 #define TX_StartBit_DEP                     0xA2        //向上位机传输MS5837数据
@@ -50,7 +46,7 @@ typedef struct
   uint16_t len;
 }Parse_Msg_t;
 
-
+extern 
 
 
 void SendAllPack_Task(void *pvParameters);

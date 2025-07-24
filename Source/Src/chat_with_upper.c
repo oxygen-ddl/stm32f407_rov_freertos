@@ -238,15 +238,15 @@ void parsePacket(uint8_t *buf, uint16_t len)
         break;
 
     case RX_StartBit_Handle_light:
-        light.on = (int16_t)((p[1] << 8) | p[0]);//开灯
+        mode.light_on = (int16_t)((p[1] << 8) | p[0]);   //开灯
         mode.lockangle = (int16_t)((p[3] << 8) | p[2]);//姿态锁
-        mode.unknow = (int16_t)((p[5] << 8) | p[4]);//解锁电机
+        mode.unlock = (int16_t)((p[5] << 8) | p[4]);//解锁电机
         mode.autotrip = (int16_t)((p[7] << 8) | p[6]);//开启定速
 
         mode.electromagnet = (int16_t)((p[9] << 8) | p[8]);//电磁铁
         mode.push_rod = (int16_t)((p[11] << 8) | p[10]);//推杆
         mode.autovertical = (int16_t)((p[13] << 8) | p[12]);//自动对正
-        mode.defogging = (int16_t)((p[15] << 8) | p[14]);//翻滚
+        mode.autorolling = (int16_t)((p[15] << 8) | p[14]);//翻滚
 
         break;
 
@@ -312,7 +312,7 @@ void Parse_Task(void *pvParameters)
             Parse_Packets(uart3_msg.data,uart3_msg.len);
             uart3_it_flag = 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

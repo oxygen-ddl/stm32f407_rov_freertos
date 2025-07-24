@@ -46,3 +46,6 @@ stm32f407_rov_freertos\transmit_power_board.o: ../Middlewares/Third_Party/FreeRT
 stm32f407_rov_freertos\transmit_power_board.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 stm32f407_rov_freertos\transmit_power_board.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\transmit_power_board.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
+stm32f407_rov_freertos\transmit_power_board.o: ../Source/Inc/move_control.h
+stm32f407_rov_freertos\transmit_power_board.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
+stm32f407_rov_freertos\transmit_power_board.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
