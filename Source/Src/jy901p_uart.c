@@ -10,7 +10,9 @@ float accx, accy, accz, angx, angy, angz, magx, magy, magz;
 float roll, pitch, yaw, temperature_jy901p;
 float roll_last, pitch_last, yaw_last;
 float roll_total, pitch_total, yaw_total, yaw_total_start;
-float roll_start, pitch_start, yaw_start; // 用于记录初始角度
+float roll_start = 0;// 用于记录初始角度
+float pitch_start = 0;// 用于记录初始角度
+float yaw_start = 0; // 用于记录初始角度
 
 int turns_of_pitch, turns_of_roll, turns_of_yaw;
 uint8_t yaw_flag = 0; // 用于判断是否第一次接收 yaw 数据
@@ -125,32 +127,27 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
                     rawH = p[9];
                     rawL = p[8];
                     version = (rawH << 8) | rawL;
-                    // roll = 360-roll;
-                    // yaw = 360-yaw;
-                    // pitch -= pitch_start;
-                    // roll -= roll_start;
-                    //! pitch于roll 角色对调
-                    yaw = -yaw;
+
+                    pitch-=pitch_start;
+                    roll-=roll_start;
+                    yaw-=yaw_start;
+
+                    roll = 180 + roll; // 将 roll 转化为 0-360 度
+                    pitch =  - pitch;//! 注意不要翘头过90度
+                    yaw = 180 + yaw; // 将 yaw 转化为 0-360 度
+
 
                     if (roll - roll_last > 270)
                     {
-                        turns_of_roll += 1;
+                        turns_of_roll -= 1;
                     }
                     else if (roll - roll_last < -270)
                     {
-                        turns_of_roll -= 1;
+                        turns_of_roll += 1;
                     }
                     roll_total = roll + turns_of_roll * 360;
 
-                    if (pitch - pitch_last > 270)
-                    {
-                        turns_of_pitch += 1;
-                    }
-                    else if (pitch - pitch_last < -270)
-                    {
-                        turns_of_pitch -= 1;
-                    }
-                    pitch_total = pitch + turns_of_pitch * 360;
+                    pitch_total = pitch;//! -90度到90度
 
                     if (yaw - yaw_last > 270)
                     {
@@ -160,18 +157,24 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
                     {
                         turns_of_yaw += 1;
                     }
-                    yaw_total = yaw + turns_of_yaw * 360;
 
+                    yaw_total = yaw + turns_of_yaw * 360;
+                    
+
+                    // 更新上次值
                     roll_last = roll;
                     pitch_last = pitch;
                     yaw_last = yaw;
 
-                    if (yaw_flag == 0)
+                    if (start_set == 0)
                     {
-                        yaw_flag = 1;
-                        yaw_total_start = yaw_total;
+                        // 第一次接收数据，记录初始角度
+                        roll_start = roll;
+                        pitch_start = pitch;
+                        yaw_start = yaw;
+                        start_set = 1;
                     }
-
+     
                     break;
 
                 case 0x54:
@@ -189,14 +192,6 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
 
                 default:
                     break;
-                }
-                if (start_set == 0)
-                {
-                    // 第一次接收数据，记录初始角度
-                    roll_start = roll;
-                    pitch_start = pitch;
-                    yaw_start = yaw;
-                    start_set = 1;
                 }
             }
             // 跳过这个子包

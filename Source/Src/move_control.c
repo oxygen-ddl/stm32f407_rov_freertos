@@ -23,11 +23,13 @@ pid_set pid_in_parameter[8]; // 内环电流控制参数，按设定推进器编
 pid_set depth_pid;
 //功能
 S_mode mode = {0};
+S_mode mode_last = {0}; // 上一次的模式数据
+
 S_pid_depth pid_depth = {0};
 
 float err_thea;
 uint16_t depth_target_value;
-
+uint8_t move_lock_flag = 0; //运动停止标志位
 float roll_target, pitch_target, yaw_target; // 目标值
 
 static void rov_move_data_process(float rov_move_data[6])
@@ -46,8 +48,10 @@ static void motor_output(void)
     }
 }
 
-
-static void Pid_Out_Calculate(void *pvParameters)
+/**
+ * 计算pid并输出
+ */
+void Pid_Out_Calculate(void)
 {
     float rov_move_data[6];
     rov_move_data_process(rov_move_data); // 姿态传感器->pid实际值
@@ -90,6 +94,7 @@ static void Pid_Out_Calculate(void *pvParameters)
         // 更新上次差值
         pid_out_parameter[i].err_last = pid_out_parameter[i].err;
     }
+
     //对平动进行控制
     for (uint8_t i = 0 + 3; i < 3 + 3; ++i)
     {
@@ -107,7 +112,6 @@ static void Pid_Out_Calculate(void *pvParameters)
         // 更新上次差值
         pid_out_parameter[i].err_last = pid_out_parameter[i].err;
     }
-
 
     /*定深pd*/
     if (depth_target_value != 0)
@@ -140,19 +144,19 @@ static void Pid_Out_Calculate(void *pvParameters)
         depth_pid.err_last = depth_pid.err;
 
         // 定深执行，直接给定上下浮动的差值
-        pid_out_parameter[4].err = -depth_pid.out_data;
+        pid_out_parameter[5].err = -depth_pid.out_data;//因为上升为正，下潜为负，
     }
     // 0-翻滚 1-俯仰
     static float a, b, c;
     a = 1;
     b = 1;
     c = 1;
-    // 判断roll
-    if (roll > 45 || roll < -45)
+    // 判断pitch(运动限幅)
+    if (pitch_total > 80 || pitch_total < -80)
     {
-        a = 0;
-        b = 0;
-        c = 0;
+        a = 0;//roll
+        b = 0;//pitch
+        c = 0;//yaw
     }
     else
     {
@@ -160,15 +164,16 @@ static void Pid_Out_Calculate(void *pvParameters)
         b = 1,
         c = 1;
     }
-    
-    pid_in_parameter[0].out_data = +pid_out_parameter[0].out_data - a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data; // 推进器电流期望值
-    pid_in_parameter[1].out_data = -pid_out_parameter[0].out_data - a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data;
-    pid_in_parameter[2].out_data = +pid_out_parameter[0].out_data + a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data;
-    pid_in_parameter[3].out_data = -pid_out_parameter[0].out_data + a * pid_out_parameter[1].out_data - c * pid_out_parameter[4].out_data;
-    pid_in_parameter[4].out_data = +b * pid_out_parameter[2].out_data - pid_out_parameter[3].out_data - pid_out_parameter[5].out_data;
-    pid_in_parameter[5].out_data = -b * pid_out_parameter[2].out_data - pid_out_parameter[3].out_data + pid_out_parameter[5].out_data;
-    pid_in_parameter[6].out_data = -b * pid_out_parameter[2].out_data + pid_out_parameter[3].out_data - pid_out_parameter[5].out_data;
-    pid_in_parameter[7].out_data = +b * pid_out_parameter[2].out_data + pid_out_parameter[3].out_data + pid_out_parameter[5].out_data;
+
+    pid_in_parameter[0].out_data = + a*pid_out_parameter[0].out_data + b*pid_out_parameter[1].out_data + pid_out_parameter[5].out_data;
+    pid_in_parameter[1].out_data = - a*pid_out_parameter[0].out_data + b*pid_out_parameter[1].out_data + pid_out_parameter[5].out_data;
+    pid_in_parameter[2].out_data = + a*pid_out_parameter[0].out_data - b*pid_out_parameter[1].out_data + pid_out_parameter[5].out_data;
+    pid_in_parameter[3].out_data = - a*pid_out_parameter[0].out_data - b*pid_out_parameter[1].out_data + pid_out_parameter[5].out_data;
+
+    pid_in_parameter[4].out_data = - c*pid_out_parameter[2].out_data - pid_out_parameter[3].out_data - pid_out_parameter[4].out_data;
+    pid_in_parameter[5].out_data = + c*pid_out_parameter[2].out_data - pid_out_parameter[3].out_data + pid_out_parameter[4].out_data;
+    pid_in_parameter[6].out_data = + c*pid_out_parameter[2].out_data + pid_out_parameter[3].out_data - pid_out_parameter[4].out_data;
+    pid_in_parameter[7].out_data = - c*pid_out_parameter[2].out_data + pid_out_parameter[3].out_data + pid_out_parameter[4].out_data;
 
     motor_output();
 }
@@ -294,7 +299,7 @@ SemaphoreHandle_t xTimer14Semaphore = NULL;
 //采用14定时器处理上位机数据
 // 采用11定时器处理PID数据，并输出到推进器
 
-void Move_Control_Task(void *pvParameters)
+void Move_Control_Task_Init(void)
 {
     /* 创建信号量，供 TIM 回调给 PID 线程发信号 */
     xTimer11Semaphore = xSemaphoreCreateBinary();
@@ -303,8 +308,7 @@ void Move_Control_Task(void *pvParameters)
     configASSERT(xTimer14Semaphore);
 
     /*  启动硬件定时器中断 */
-    HAL_TIM_Base_Start_IT(&htim11);
-    HAL_TIM_Base_Start_IT(&htim14);
+    HAL_TIM_Base_Start_IT(&htim14);//控制数据+运动控制中断
 
     //设置输出限幅幅值，积分限幅幅值,变积分指数值误差分界值
     for(uint8_t i=0;i<6;++i)
@@ -323,9 +327,9 @@ void Move_Control_Task(void *pvParameters)
     pid_out_parameter[0].parameter.ki=2;
     pid_out_parameter[1].parameter.ki=2;
     pid_out_parameter[2].parameter.ki=2;
-    pid_out_parameter[3].parameter.ki=2;
+    pid_out_parameter[3].parameter.ki=0;
     pid_out_parameter[4].parameter.ki=0;
-    pid_out_parameter[5].parameter.ki=2;
+    pid_out_parameter[5].parameter.ki=0;
 
     pid_out_parameter[0].parameter.kd=30;
     pid_out_parameter[1].parameter.kd=30;
@@ -348,47 +352,113 @@ void Move_Control_Task(void *pvParameters)
 
 //! 现在对pid数据的编号进行定义
 
-// 0-roll 1-pitch 2-yaw 3-向前 4-左移 5-向上（正方向定义）
+//! 0-roll 1-pitch 2-yaw 3-向前 4-左移 5-向上（正方向定义）
 //actual_value为加入运算
 //特别注意翻滚数据突变带来的影响
 
 //用来处理控制数据的线程
-void thread_handle_ctrl_process_entry(void *pvParameters)
+void Handle_Control_Task(void *pvParameters)
 {
     for (;;)
     {
         // 等待定时器信号量
         if (xSemaphoreTake(xTimer14Semaphore, portMAX_DELAY) == pdTRUE)
         {
-            if (fabsf(move_roll)>10)
+            if (fabsf(move_roll)>2)
             {
                 pid_out_parameter[0].target_value += (float)move_roll*0.04f;
             }
-            if (fabsf(move_pitch)>10)
+            if (fabsf(move_pitch)>2)
             {
                 pid_out_parameter[1].target_value += (float)move_pitch*0.04f;
             }
-            if (fabsf(move_yaw)>10)
+            if (fabsf(move_yaw)>2)
             {
                 pid_out_parameter[2].target_value += (float)move_yaw*0.04f;
             }
 
-            if (fabsf(go_forward)>10)
+            if (fabsf(go_forward)>2)
             {
-                pid_out_parameter[4].target_value += (float)go_forward*0.04f;
+                pid_out_parameter[3].err = (float)go_forward*0.5f;
             }
-            if (fabsf(go_left)>10)
+            if (fabsf(go_left)>2)
             {
-                pid_out_parameter[5].target_value += (float)go_left*0.04f;
+                if (mode.autotrip == 0x02)
+                {
+                    pid_out_parameter[4].err = (float)go_left*0.5f;
+                }
             }
-            if (fabsf(go_up)>10)
+            if (fabsf(go_up)>2)
             {
-                pid_out_parameter[3].target_value += (float)go_up*0.04f;
+                if (mode.lockangle == 0x02) // 姿态未锁定
+                {
+                    pid_out_parameter[5].err = (float)go_up*0.05f; // 上升为正，下潜为负
+                }
+                else if (mode.lockangle == 0x01 && mode_last.lockangle == 0x02) // 姿态锁定
+                {
+                    pid_out_parameter[5].err = 0; // 锁定时不允许上下浮动
+                    depth_target_value = ms5837_depth;
+                }
+                else if(mode.lockangle == 0x01) // 姿态锁定
+                {
+                    pid_out_parameter[5].err = 0; // 锁定时不允许上下浮动
+                    depth_target_value = depth_target_value - (float)go_up*0.05f; // 上升为正，下潜为负
+                }
             }
 
+            if (mode.light_on == 0x02)//关灯
+            {
+                light_set(0);
+            }
+            if (mode.light_on == 0x01 && mode_last.light_on == 0x02)//开灯
+            {
+                light_set(50);//一半亮度
+            }
+
+            if (mode.unlock == 0x02)//关闭电机
+            {
+                move_lock_flag = 0; // 停止运动
+                for (uint8_t i = 0; i < 8; ++i)
+                {
+                    motor_set(i + 1, 0);
+                }
+
+            }
+            if (mode.unlock == 0x01 && mode_last.unlock == 0x02)//开启电机
+            {
+                move_lock_flag = 1;
+            }
             
+            if (mode.electromagnet == 0x02)//电磁铁关闭
+            {
+                electromagnet_set(0);
+            }
+            if (mode.electromagnet == 0x01 && mode_last.electromagnet == 0x02)//电磁铁开启
+            {
+                electromagnet_set(1);
+            }
+
+            if (mode.push_rod == 0x02)//推杆关闭
+            {
+                push_rod_set(0);
+            }
+            if (mode.push_rod == 0x01 && mode_last.push_rod == 0x02)//推杆开启
+            {
+                push_rod_set(1);
+            }
             
+            if (mode.autotrip == 0x01)//定速开启（巡航模式）
+            {
+                pid_out_parameter[4].target_value = 20; // 左右平移
+            }
+              
+            mode_last = mode; // 更新上一次的模式数据
         }
-
+        if (move_lock_flag == 1)
+        {
+            Pid_Out_Calculate(); // 计算pid并输出
+        }
+        
     }
 }
+

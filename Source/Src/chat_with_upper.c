@@ -156,7 +156,7 @@ void SendAllPack_Task(void *pvParameters)
         data_packup(TX_StartBit_PWM1_8_power);
         vTaskDelay(pdMS_TO_TICKS(50));
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
@@ -228,6 +228,31 @@ void parsePacket(uint8_t *buf, uint16_t len)
         handle.yaw = -(int16_t)((p[7] << 8) | p[6]);
         handle.pitch = (int16_t)((p[9] << 8) | p[8]);
         handle.roll = (int16_t)((p[11] << 8) | p[10]);
+        
+        if (handle.go > 101 || handle.go < -101)
+        {
+            handle.go = 0; // 防止误操作
+        }
+        if (handle.move > 101 || handle.move < -101)
+        {
+            handle.move = 0; // 防止误操作
+        }
+        if (handle.up > 101 || handle.up < -101)
+        {
+            handle.up = 0; // 防止误操作
+        }
+        if (handle.yaw > 101 || handle.yaw < -101)
+        {
+            handle.yaw = 0; // 防止误操作
+        }
+        if (handle.pitch > 101 || handle.pitch < -101)
+        {
+            handle.pitch = 0; // 防止误操作
+        }
+        if (handle.roll > 101 || handle.roll < -101)
+        {
+            handle.roll = 0; // 防止误操作
+        }
         // 更新外部变量
         go_forward = handle.go;
         go_left = handle.move;
@@ -332,8 +357,6 @@ void UART3_IT_TASK(void)
             memcpy(uart3_msg.data, parse_rx_buf, len);
             uart3_it_flag = 1;
         }
-        //HAL_UART_Transmit_DMA(&huart6,parse_rx_buf,len);
-        // 重启 DMA 
         HAL_UART_Receive_DMA(&huart3, parse_rx_buf, PARSER_DMA_BUF_SIZE);
     }
 }

@@ -262,7 +262,7 @@ void Uart5_Parse_Init(void)
     HAL_UART_Receive_DMA(&huart5, uart5_buf, power_board_max_len);
     __HAL_UART_ENABLE_IT(&huart5, UART_IT_IDLE);
 }
-S_mode mode_last = {0};
+
 //对电子开关进行设置，同时对接收到的上位机控制命令下达
 void Uart5_Parse_Task(void *pvParameters)
 {
@@ -270,30 +270,6 @@ void Uart5_Parse_Task(void *pvParameters)
     mode.light_on = 0x2;
     for (;;)
     {
-        //开关灯设置
-        if (mode.light_on != mode_last.light_on)
-        {
-            if (mode.light_on == 0x01)
-            {
-                light_switch_set(1);
-            }
-            else
-            {
-                light_switch_set(0);
-            }
-            mode_last.light_on = mode.light_on;
-        }
-        if (mode_last.unlock != mode.unlock)
-        {
-            if (mode.unlock == 0x01)
-            {
-                motor_switch_set(1);
-            }
-            else
-            {
-                motor_switch_set(0);
-            }
-        }
         
         if (uart5_it_flag == 1)
         {

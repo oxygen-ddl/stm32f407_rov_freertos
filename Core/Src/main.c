@@ -106,16 +106,14 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
-  MX_TIM11_Init();
   MX_TIM14_Init();
-  MX_TIM10_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   //motor_init();
   pwm_set(3,1,1500);
   pwm_set(3,2,1000);
   //pwm_set(3,3,100);//灯
-  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_SET);//低电平触发
+  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_RESET);//低电平触发
   Sthc3SensorI2c_Init();
 
   
@@ -192,7 +190,6 @@ void SystemClock_Config(void)
 #include "move_control.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
-#include "move_drv.h"
 /* USER CODE END 4 */
 
 /**
@@ -207,18 +204,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-    if (htim->Instance == TIM11)
-    {
-        xSemaphoreGiveFromISR(xTimer11Semaphore, &xHigherPriorityTaskWoken);
-    }
-    else if (htim->Instance == TIM14)
+    if (htim->Instance == TIM14)
     {
         xSemaphoreGiveFromISR(xTimer14Semaphore, &xHigherPriorityTaskWoken);
-    }
-    else if (htim->Instance == TIM10)
-    {
-        xSemaphoreGiveFromISR(xTimer10Semaphore, &xHigherPriorityTaskWoken);
     }
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   /* USER CODE END Callback 0 */

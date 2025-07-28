@@ -65,12 +65,10 @@ osThreadId_t MS5837_Uart_TaskHandle; // MS5837 UART任务句柄
 osThreadId_t SHTC3_IIC_TaskHandle; //SHTC3 IIC任务句柄
 
 osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
-osThreadId_t Ath20_Bmp280_TaskHandle; // 循环LED任务句柄
-osThreadId_t tuigan_TaskHandle;
-osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
-osThreadId_t Wave_Distance_Handle_TaskHandle;//避障传感器解析任务句柄
-osThreadId_t Send_Power_Board_TaskHandle;   //向电源板传递信息
-osThreadId_t Parse_Power_Board_TaskHandle;//处理电源板的信息
+// osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
+// osThreadId_t Wave_Distance_Handle_TaskHandle;//避障传感器解析任务句柄
+// osThreadId_t Send_Power_Board_TaskHandle;   //向电源板传递信息
+osThreadId_t Parse_Power_Board_TaskHandle;  //处理电源板的信息
 
 
 
@@ -113,33 +111,27 @@ const osThreadAttr_t SHTC3_IIC_attributes = {
 const osThreadAttr_t Move_Control_attributes = {
   .name = "Move_Control",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow2,
+  .priority = (osPriority_t) osPriorityLow4,
 };
 
-const osThreadAttr_t tuigan_attributes = {
-  .name = "tuigan",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
-};
+// const osThreadAttr_t wave_distance_trigger_attributes = {
+//   .name = "wave_distance__trigger",
+//   .stack_size = 128 * 4,
+//   .priority = (osPriority_t) osPriorityLow3,
+// };
 
-const osThreadAttr_t wave_distance_trigger_attributes = {
-  .name = "wave_distance__trigger",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
-};
-
-const osThreadAttr_t wave_distance_handle_attributes = {
-  .name = "wave_distance_handle",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
-};
+// const osThreadAttr_t wave_distance_handle_attributes = {
+//   .name = "wave_distance_handle",
+//   .stack_size = 128 * 4,
+//   .priority = (osPriority_t) osPriorityLow3,
+// };
 
 
-const osThreadAttr_t send_power_handle_attributes = {
-  .name = "send_power_handle",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
-};
+// const osThreadAttr_t send_power_handle_attributes = {
+//   .name = "send_power_handle",
+//   .stack_size = 128 * 4,
+//   .priority = (osPriority_t) osPriorityLow3,
+// };
 
 const osThreadAttr_t parse_power_handle_attributes = {
   .name = "parse_power_handle",
@@ -183,12 +175,11 @@ void MX_FREERTOS_Init(void) {
 
   Parser_Init(); // 初始化解析器
   JY901_UART_Init(); // 启动jy901p DMA空闲检测
-  //Move_Control_Task(NULL); // 启动推进器控制任务
+  Move_Control_Task_Init(); // 启动推进器控制任务
   Parser4_Init(); // 启动MS5837 UART解析任务
-  Move_basic_Init();
   Uart5_Parse_Init();
   SoftUART_Init();
-  
+
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -217,9 +208,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  Move_Control_TaskHandle = osThreadNew(upper_move_process, NULL, &Move_Control_attributes); // 启动推进器控制任务
-
-  //tuigan_TaskHandle = osThreadNew(pull_use_electric,NULL,&tuigan_attributes);
+  Move_Control_TaskHandle = osThreadNew(Handle_Control_Task, NULL, &Move_Control_attributes); // 启动推进器控制任务
 
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
 
@@ -233,11 +222,11 @@ void MX_FREERTOS_Init(void) {
 
   view_variables_TaskHandle = osThreadNew(view_variables_Task, NULL, &view_variables_attributes);// 启动变量观测任务
 
-  Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
+  //Wave_Distance_Trigger_TaskHandle = osThreadNew(Trigger_Distance_Mearsure_Task, NULL, &wave_distance_trigger_attributes);//启动避障传感器周期性触发任务
 
-  Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
+  //Wave_Distance_Handle_TaskHandle = osThreadNew(Handle_Muart_Task,NULL,&wave_distance_handle_attributes);//启动避障传感器周期性解析任务
 
-  Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);  //启动发送给电源板数据任务
+  //Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);  //启动发送给电源板数据任务
 
   Parse_Power_Board_TaskHandle = osThreadNew(Uart5_Parse_Task,NULL,&parse_power_handle_attributes);   //启动解析电源板数据任务
 

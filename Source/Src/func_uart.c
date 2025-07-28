@@ -130,6 +130,7 @@ void view_variables_Task(void *argument)
     for (;;)
     {
         //UART_SendFloats_DMA(3, (float)roll, (float)pitch,(float)yaw);
+        //UART_SendFloats_DMA(3,roll_total, pitch_total, yaw_total);
         //UART_SendFloats_DMA(9, (float)accx, (float)accy, (float)accz,  (float)angx, (float)angy, (float)angz, (float)roll, (float)pitch, (float)yaw);
         //UART_SendFloats_DMA(6,(float)go_forward, (float)go_left,(float)go_up,(float) move_yaw,(float) move_pitch, (float)move_roll);
         //UART_SendFloats_DMA(8,(float)mode.light_on,(float)mode.lockangle,(float)mode.unlock,(float)mode.autotrip,(float)mode.electromagnet,(float)mode.push_rod,(float)mode.autovertical,(float)mode.autorolling);
@@ -138,15 +139,8 @@ void view_variables_Task(void *argument)
         //UART_SendFloats_DMA(4, (float)bmp280_pressure, (float)bmp280_temperature, (float)ath20_humidity, (float)ath20_temperature);
         //UART_SendFloats_DMA(3,pitch_total,roll_total,yaw_total);
         //UART_SendFloats_DMA(4,(float)current_adc_data[1],(float)current_adc_data[2],(float)current_adc_data[4],(float)current_adc_data[7]);
-        UART_SendFloats_DMA(4,sthc3_temperature,sthc3_humidity,(float)temperature_power_board,(float)RH_power_board);
-        
+        //UART_SendFloats_DMA(4,sthc3_temperature,sthc3_humidity,(float)temperature_power_board,(float)RH_power_board);
+        UART_SendFloats_DMA(8,(float)pid_in_parameter[0].out_data,(float)pid_in_parameter[1].out_data,(float)pid_in_parameter[2].out_data, (float)pid_in_parameter[3].out_data,(float)pid_in_parameter[4].out_data,(float)pid_in_parameter[5].out_data,(float)pid_in_parameter[6].out_data,(float)pid_in_parameter[7].out_data);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
-
-
-void view_uart_parse_Task(void *argument)
-{
-
-}
-

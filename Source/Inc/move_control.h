@@ -98,12 +98,14 @@ extern  pid_set pid_in_parameter[8];
 extern  pid_set depth_pid;
 
 
-/** TIM11 到期信号量，供 PID 线程等待 */
-extern SemaphoreHandle_t xTimer11Semaphore;
+
 /** TIM14 到期信号量，供 PID 线程等待 */
 extern SemaphoreHandle_t xTimer14Semaphore;
 void motor_init(void);
-void Move_Control_Task(void *pvParameters);
+
+void Move_Control_Task_Init(void);
+
+void Handle_Control_Task(void *pvParameters);
 
 
 

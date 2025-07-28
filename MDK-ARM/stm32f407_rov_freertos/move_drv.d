@@ -46,8 +46,3 @@ stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/in
 stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\move_drv.o: ../Core/Inc/tim.h
 stm32f407_rov_freertos\move_drv.o: ../Core/Inc/main.h
-stm32f407_rov_freertos\move_drv.o: ../Source/Inc/move_control.h
-stm32f407_rov_freertos\move_drv.o: ../Source/Inc/jy901p_uart.h
-stm32f407_rov_freertos\move_drv.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\string.h
-stm32f407_rov_freertos\move_drv.o: ../Source/Inc/pid.h
-stm32f407_rov_freertos\move_drv.o: ../Source/Inc/ms5837_uart.h

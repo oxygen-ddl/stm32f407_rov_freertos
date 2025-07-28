@@ -45,3 +45,6 @@ stm32f407_rov_freertos\ms5837_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source
 stm32f407_rov_freertos\ms5837_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
 stm32f407_rov_freertos\ms5837_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 stm32f407_rov_freertos\ms5837_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
+stm32f407_rov_freertos\ms5837_uart.o: ../Source/Inc/jy901p_uart.h
+stm32f407_rov_freertos\ms5837_uart.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
+stm32f407_rov_freertos\ms5837_uart.o: C:\Users\w\AppData\Local\Keil_v5\ARM\ARMCompiler_506\Bin\..\include\math.h
