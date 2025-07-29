@@ -99,19 +99,19 @@ const osThreadAttr_t Jy901p_Uart_attributes = {
 const osThreadAttr_t MS5837_Uart_attributes = {
   .name = "MS5837_Uart",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow2,
+  .priority = (osPriority_t) osPriorityLow1,
 };
 
 const osThreadAttr_t SHTC3_IIC_attributes = {
   .name = "SHTC3_IIC",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow2,
+  .priority = (osPriority_t) osPriorityLow1,
 };
 
 const osThreadAttr_t Move_Control_attributes = {
   .name = "Move_Control",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow4,
+  .priority = (osPriority_t) osPriorityLow3,
 };
 
 // const osThreadAttr_t wave_distance_trigger_attributes = {
@@ -178,7 +178,9 @@ void MX_FREERTOS_Init(void) {
   Move_Control_Task_Init(); // 启动推进器控制任务
   Parser4_Init(); // 启动MS5837 UART解析任务
   Uart5_Parse_Init();
-  SoftUART_Init();
+
+  
+  //SoftUART_Init();
 
   /* USER CODE END Init */
 
@@ -208,7 +210,7 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  Move_Control_TaskHandle = osThreadNew(Handle_Control_Task, NULL, &Move_Control_attributes); // 启动推进器控制任务
+  //Move_Control_TaskHandle = osThreadNew(Handle_Control_Task, NULL, &Move_Control_attributes); // 启动推进器控制任务
 
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
 
@@ -229,11 +231,6 @@ void MX_FREERTOS_Init(void) {
   //Send_Power_Board_TaskHandle = osThreadNew(switch_Process_Task,NULL,&send_power_handle_attributes);  //启动发送给电源板数据任务
 
   Parse_Power_Board_TaskHandle = osThreadNew(Uart5_Parse_Task,NULL,&parse_power_handle_attributes);   //启动解析电源板数据任务
-
-
-
-
-
 
   /* USER CODE END RTOS_THREADS */
 

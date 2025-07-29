@@ -140,7 +140,7 @@ void view_variables_Task(void *argument)
         //UART_SendFloats_DMA(3,pitch_total,roll_total,yaw_total);
         //UART_SendFloats_DMA(4,(float)current_adc_data[1],(float)current_adc_data[2],(float)current_adc_data[4],(float)current_adc_data[7]);
         //UART_SendFloats_DMA(4,sthc3_temperature,sthc3_humidity,(float)temperature_power_board,(float)RH_power_board);
-        UART_SendFloats_DMA(8,(float)pid_in_parameter[0].out_data,(float)pid_in_parameter[1].out_data,(float)pid_in_parameter[2].out_data, (float)pid_in_parameter[3].out_data,(float)pid_in_parameter[4].out_data,(float)pid_in_parameter[5].out_data,(float)pid_in_parameter[6].out_data,(float)pid_in_parameter[7].out_data);
+        //UART_SendFloats_DMA(8,(float)pid_in_parameter[0].out_data,(float)pid_in_parameter[1].out_data,(float)pid_in_parameter[2].out_data, (float)pid_in_parameter[3].out_data,(float)pid_in_parameter[4].out_data,(float)pid_in_parameter[5].out_data,(float)pid_in_parameter[6].out_data,(float)pid_in_parameter[7].out_data);
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

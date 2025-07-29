@@ -228,7 +228,7 @@ void parsePacket(uint8_t *buf, uint16_t len)
         handle.yaw = -(int16_t)((p[7] << 8) | p[6]);
         handle.pitch = (int16_t)((p[9] << 8) | p[8]);
         handle.roll = (int16_t)((p[11] << 8) | p[10]);
-        
+
         if (handle.go > 101 || handle.go < -101)
         {
             handle.go = 0; // 防止误操作
@@ -307,7 +307,11 @@ void parsePacket(uint8_t *buf, uint16_t len)
 //解析多帧数据组合
 void Parse_Packets(uint8_t *buf, uint16_t len)
 {
-    for (uint8_t i = 0; i < len; i++)
+    if (len < 12) 
+    {
+        return; // 至少要有头、ID、LEN、CHK
+    }
+    for (uint8_t i = 0; i < len-2; i++)
     {
         if (buf[i] == 0xFF)
         {

@@ -30,6 +30,7 @@
 #include "move_drv.h"
 #include "move_control.h"
 #include "shtc3.h"
+#include "move_drv.h"
 
 /* USER CODE END Includes */
 
@@ -106,17 +107,13 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_TIM3_Init();
-  MX_TIM14_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  //motor_init();
-  pwm_set(3,1,1500);
-  pwm_set(3,2,1000);
-  //pwm_set(3,3,100);//灯
-  HAL_GPIO_WritePin(GPIOD,GPIO_PIN_1,GPIO_PIN_RESET);//低电平触发
+  pwm_init(); // 初始化PWM
+  light_set(0); // 设置探照灯亮度为0
+  motor_init();//电机解锁，并轻微转一转
   Sthc3SensorI2c_Init();
 
-  
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -203,12 +200,6 @@ void SystemClock_Config(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
   /* USER CODE BEGIN Callback 0 */
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    if (htim->Instance == TIM14)
-    {
-        xSemaphoreGiveFromISR(xTimer14Semaphore, &xHigherPriorityTaskWoken);
-    }
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM6) {
     HAL_IncTick();

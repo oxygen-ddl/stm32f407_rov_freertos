@@ -33,16 +33,5 @@ stm32f407_rov_freertos\move_drv.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx
 stm32f407_rov_freertos\move_drv.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h
 stm32f407_rov_freertos\move_drv.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h
 stm32f407_rov_freertos\move_drv.o: ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
-stm32f407_rov_freertos\move_drv.o: ../Core/Inc/FreeRTOSConfig.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/semphr.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/queue.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
-stm32f407_rov_freertos\move_drv.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 stm32f407_rov_freertos\move_drv.o: ../Core/Inc/tim.h
 stm32f407_rov_freertos\move_drv.o: ../Core/Inc/main.h

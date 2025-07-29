@@ -625,6 +625,11 @@
               <FileType>5</FileType>
               <FilePath>..\Source\Inc\shtc3.h</FilePath>
             </File>
+            <File>
+              <FileName>sonar.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Source\Inc\sonar.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -699,6 +704,11 @@
               <FileName>shtc3.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Source\Src\shtc3.c</FilePath>
+            </File>
+            <File>
+              <FileName>sonar.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Source\Src\sonar.c</FilePath>
             </File>
           </Files>
         </Group>

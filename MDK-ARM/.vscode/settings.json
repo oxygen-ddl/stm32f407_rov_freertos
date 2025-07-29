@@ -33,6 +33,7 @@
         "shtc3.h": "c",
         "random": "c",
         "compare": "c",
-        "cstdint": "c"
+        "cstdint": "c",
+        "sonar.h": "c"
     }
 }
