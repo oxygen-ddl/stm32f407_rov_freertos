@@ -54,26 +54,10 @@ typedef struct
 
 typedef struct
 {
-   struct
-   {
-     float kp[6];
-   }p;
-   struct
-   {
-    float ki[6];
-   }i;
-   struct
-   {
-    float kd[6];
-   }d;
-}S_pid_outcircle;
-
-typedef struct
-{
        float kp;
        float ki;
        float kd;
-}S_pid_depth;
+}S_pid_roll;
 
 
 extern S_handle handle;
@@ -87,20 +71,16 @@ extern int16_t move_pitch;
 extern int16_t move_roll;
 
 extern S_mode mode;
-extern S_pid_depth pid_depth;
+extern S_pid_roll pid_roll;
 
 
 //初始化各个pid数据结构体
-//为代码简洁方便，用数组表示；分别为俯仰、翻滚、偏航，前后、上下、左右
+//为代码简洁方便，用数组表示；分别为俯仰、翻滚、偏航，前后、左右、上下
 extern  pid_set pid_out_parameter[6];
 //8个推进器
 extern  pid_set pid_in_parameter[8];
-extern  pid_set depth_pid;
 
 
-
-/** TIM14 到期信号量，供 PID 线程等待 */
-extern SemaphoreHandle_t xTimer14Semaphore;
 void motor_init(void);
 
 void Move_Control_Task_Init(void);

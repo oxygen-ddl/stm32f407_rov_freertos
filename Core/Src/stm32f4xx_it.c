@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "jy901p_uart.h"
 #include "ms5837_uart.h"
+#include "sonar.h"
 
 #include "chat_with_upper.h"
 #include "transmit_power_board.h"
@@ -331,7 +332,7 @@ void TIM4_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-
+  UART1_IT_TASK(); // 处理UART1的中断任务
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */

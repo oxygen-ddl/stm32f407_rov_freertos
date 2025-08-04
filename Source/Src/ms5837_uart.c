@@ -81,9 +81,9 @@ void parse_frame(const uint8_t *buf, int len)
     parse_value(buf, len, PREFIX_DEPTH, &ms5837_depth);
 
     //3.1415926f/180 = 0.017453292f
-    ms5837_depth = ms5837_depth + 0.15f*sinf(pitch* 0.01745329f) + 0.05f; // 传感器补偿，将传感器深度值减去俯仰角度的影响，折算到ROV中心
-    if (ms5837_depth < 0.0f) ms5837_depth = 0.0f; // 深度不能为负
-    if (ms5837_depth > 10.0f) ms5837_depth = 10.0f; // 限制最大深度为 10 米 
+    ms5837_depth = ms5837_depth + 0.15f*sinf(pitch* 0.01745329f); // 传感器补偿，将传感器深度值减去俯仰角度的影响
+    if (ms5837_depth < 0.0f) ms5837_depth = 0.0001f; // 深度不能为负
+    if (ms5837_depth > 0.6f) ms5837_depth = 0.6f; // 限制最大深度为 10 米 
 }
 
 /**
@@ -128,7 +128,7 @@ void MS5837_ProcessTask(void *pvParameters)
             parse_frame(uart4_msg.data, uart4_msg.len);
             uart4_it_flag = 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(40));//数据传回
     }
 }
 

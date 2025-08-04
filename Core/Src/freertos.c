@@ -29,14 +29,13 @@
 #include "chat_with_upper.h"
 #include "func_uart.h"
 #include "shtc3.h"
-
 #include "move_control.h"
 #include "ms5837_uart.h"
 #include "move_drv.h"
 #include "distance_measure.h"
 #include "transmit_power_board.h"
 #include "software_uart.h"
-
+#include "sonar.h"
 
 /* USER CODE END Includes */
 
@@ -63,6 +62,8 @@ osThreadId_t Parse_Task_TaskHandle; // 解析上位机任务句柄
 osThreadId_t Jy901p_Uart_TaskHandle; // jy901p UART任务句柄
 osThreadId_t MS5837_Uart_TaskHandle; // MS5837 UART任务句柄
 osThreadId_t SHTC3_IIC_TaskHandle; //SHTC3 IIC任务句柄
+osThreadId_t Sonar_ProcessTaskHandle; //Sonar Process任务句柄
+
 
 osThreadId_t Move_Control_TaskHandle; // 推进器控制任务句柄
 // osThreadId_t Wave_Distance_Trigger_TaskHandle;//避障传感器触发任务句柄
@@ -81,13 +82,13 @@ const osThreadAttr_t view_variables_attributes = {
 const osThreadAttr_t SendAllPack_attributes = {
   .name = "SendAllPack",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
+  .priority = (osPriority_t) osPriorityLow1,
 };
 
 const osThreadAttr_t Parse_Task_attributes = {
   .name = "Parse_Task",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow2,
+  .priority = (osPriority_t) osPriorityLow3,
 };
 
 const osThreadAttr_t Jy901p_Uart_attributes = {
@@ -99,13 +100,19 @@ const osThreadAttr_t Jy901p_Uart_attributes = {
 const osThreadAttr_t MS5837_Uart_attributes = {
   .name = "MS5837_Uart",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow1,
+  .priority = (osPriority_t) osPriorityLow,
 };
 
 const osThreadAttr_t SHTC3_IIC_attributes = {
   .name = "SHTC3_IIC",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow1,
+};
+
+const osThreadAttr_t Sonar_Process_attributes = {
+  .name = "Sonar_Process",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 const osThreadAttr_t Move_Control_attributes = {
@@ -136,7 +143,7 @@ const osThreadAttr_t Move_Control_attributes = {
 const osThreadAttr_t parse_power_handle_attributes = {
   .name = "parse_power_handle",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow3,
+  .priority = (osPriority_t) osPriorityLow2,
 };
 
 /* USER CODE END Variables */
@@ -173,13 +180,12 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
-  Parser_Init(); // 初始化解析器
-  JY901_UART_Init(); // 启动jy901p DMA空闲检测
+  Parser_Init();            // 初始化解析器
   Move_Control_Task_Init(); // 启动推进器控制任务
-  Parser4_Init(); // 启动MS5837 UART解析任务
-  Uart5_Parse_Init();
-
-  
+  Parser4_Init();           // 启动MS5837 UART解析任务
+  Uart5_Parse_Init();       //电源板数据解析任务
+  JY901_UART_Init();        // 启动jy901p DMA空闲检测
+  sonar_init();             // 初始化超声波传感器
   //SoftUART_Init();
 
   /* USER CODE END Init */
@@ -210,13 +216,15 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
 
-  //Move_Control_TaskHandle = osThreadNew(Handle_Control_Task, NULL, &Move_Control_attributes); // 启动推进器控制任务
+  Move_Control_TaskHandle = osThreadNew(Handle_Control_Task, NULL, &Move_Control_attributes); // 启动推进器控制任务
 
   Jy901p_Uart_TaskHandle = osThreadNew(JY901_ProcessTask, NULL, &Jy901p_Uart_attributes); // 启动jy901p UART任务
 
   MS5837_Uart_TaskHandle = osThreadNew(MS5837_ProcessTask, NULL, &MS5837_Uart_attributes); // 启动MS5837 UART任务
 
   SHTC3_IIC_TaskHandle = osThreadNew(Sthc3SensorI2cRead_Task, NULL, &SHTC3_IIC_attributes); // 启动SHTC3  IIC任务
+
+  Sonar_ProcessTaskHandle = osThreadNew(Sonar_Process_Task, NULL, &Sonar_Process_attributes); // 启动Sonar Process任务
   
   SendAllPack_TaskHandle = osThreadNew(SendAllPack_Task, NULL,&SendAllPack_attributes); // 启动发送给上位机任务 
 

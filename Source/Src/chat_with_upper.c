@@ -6,7 +6,7 @@
 #include "ath20_bmp280.h"
 #include "move_control.h"
 #include "shtc3.h"
-
+#include "sonar.h"
 
 #include "usart.h"
 #include "FreeRTOS.h"
@@ -88,9 +88,9 @@ void data_packup(uint8_t startbit)
         conv[0].value = accx;
         conv[1].value = accy;
         conv[2].value = accz;
-        conv[3].value = angx;
-        conv[4].value = angy;
-        conv[5].value = angz;
+        conv[3].value = roll_total;
+        conv[4].value = pitch_total;
+        conv[5].value = yaw_total;
         conv[6].value = roll;
         conv[7].value = pitch;
         conv[8].value = yaw;
@@ -102,8 +102,8 @@ void data_packup(uint8_t startbit)
     case (TX_StartBit_DEP):
         conv[0].value = ms5837_depth;
         conv[1].value = ms5837_pressure;
-        conv[2].value = wave_distance[0];
-        conv[3].value = wave_distance[1];
+        conv[2].value = sonar_distance; // 发送测量的距离
+        conv[3].value = sonar_distance_deputy; // 发送副模组测量的距离
 
         float_pack(4, 16, TX_StartBit_DEP, buf, conv);
         HAL_UART_Transmit(&huart3, buf, 20, 100); // 发送数据包到上位机
@@ -111,24 +111,34 @@ void data_packup(uint8_t startbit)
 
     case (TX_StartBit_TEM_WET):
         conv[0].value = sthc3_temperature;//主控温度
-        conv[1].value = sthc3_humidity;//主控湿度
+        conv[1].value = sthc3_humidity;   //主控湿度
         conv[2].value = (float)temperature_power_board;//电源温度
-        conv[3].value = (float)RH_power_board;//电源湿度
+        conv[3].value = (float)RH_power_board;      //电源湿度
 
         float_pack(4, 16, TX_StartBit_TEM_WET, buf, conv);
         HAL_UART_Transmit(&huart3, buf, 20, 100); // 发送数据包到上位机
         break;
 
     case (TX_StartBit_PWM1_8_power):
-        conv[0].value = (float)current_adc_data[0];
-        conv[1].value = (float)current_adc_data[1];
-        conv[2].value = (float)current_adc_data[2];
-        conv[3].value = (float)current_adc_data[3];
-        conv[4].value = (float)current_adc_data[4];
-        conv[5].value = (float)current_adc_data[5];
-        conv[6].value = (float)current_adc_data[6];
-        conv[7].value = (float)current_adc_data[7];
-        conv[8].value = (float)current_adc_data[8];
+
+        // conv[0].value = (float)current_adc_data[0];
+        // conv[1].value = (float)current_adc_data[1];
+        // conv[2].value = (float)current_adc_data[2];
+        // conv[3].value = (float)current_adc_data[3];
+        // conv[4].value = (float)current_adc_data[4];
+        // conv[5].value = (float)current_adc_data[5];
+        // conv[6].value = (float)current_adc_data[6];
+        // conv[7].value = (float)current_adc_data[7];
+        // conv[8].value = (float)current_adc_data[8];
+        conv[0].value = pid_in_parameter[0].out_data;
+        conv[1].value = pid_in_parameter[1].out_data;
+        conv[2].value = pid_in_parameter[2].out_data;
+        conv[3].value = pid_in_parameter[3].out_data;
+        conv[4].value = (float)current_adc_data[8];
+        conv[5].value = pid_in_parameter[4].out_data;
+        conv[6].value = pid_in_parameter[5].out_data;
+        conv[7].value = pid_in_parameter[6].out_data;
+        conv[8].value = pid_in_parameter[7].out_data; 
 
         float_pack(9, 36, TX_StartBit_PWM1_8_power, buf, conv);
         HAL_UART_Transmit(&huart3, buf, 40, 100); // 发送数据包到上位机
@@ -185,21 +195,27 @@ uint16_t uint16_convert(uint8_t a[], int start, int end)
     return convert.value;
 }
 
-float float_convert(uint8_t a[], int start, int end)
+// float float_convert(uint8_t *a, int start,int end)
+// {
+//     R_FloatData convert;
+//     for (int i = start; i <= end; i++)
+//     {
+//         convert.rxbuf[i - start] = a[i];
+//     }
+
+//     return convert.value;
+// }
+
+float float_convert(uint8_t *a, int start,int end)
 {
-    R_FloatData convert;
-    for (int i = start; i <= end; i++)
-    {
-        convert.rxbuf[i - start] = a[i];
-    }
-
-    return convert.value;
+    // 确保只拷 4 字节
+    if (end - start != 3) return 0.0f;
+    float v;
+    memcpy(&v, a + start, sizeof(v));
+    return v;
 }
-
 /*************************************************************************** */
 
-
-#include "queue.h"
 #include "string.h"     // memcpy
 
 /* 真正做 unpack 的任务 */
@@ -256,7 +272,7 @@ void parsePacket(uint8_t *buf, uint16_t len)
         // 更新外部变量
         go_forward = handle.go;
         go_left = handle.move;
-        go_up = handle.up;
+        go_up =  handle.up;
         move_yaw = handle.yaw;
         move_pitch = handle.pitch;
         move_roll = handle.roll;
@@ -288,14 +304,14 @@ void parsePacket(uint8_t *buf, uint16_t len)
         for (uint8_t i = 0; i < 6; ++i)
         {
 
-            pid_out_parameter[i].parameter.kp = float_convert(p, i * 12 + 0, i * 12 + 3);
-            pid_out_parameter[i].parameter.ki = float_convert(p, i * 12 + 4, i * 12 + 7);
-            pid_out_parameter[i].parameter.kd = float_convert(p, i * 12 + 8, i * 12 + 11);
+            pid_out_parameter[i].parameter.kp = float_convert(p, i * 12 + 12, i * 12 + 15);
+            pid_out_parameter[i].parameter.ki = float_convert(p, i * 12 + 16, i * 12 + 19);
+            pid_out_parameter[i].parameter.kd = float_convert(p, i * 12 + 20, i * 12 + 23);
         }
-        // 3) 解析 深度 PID
-        pid_depth.kp = float_convert(p, 84, 90);
-        pid_depth.ki = float_convert(p, 91, 94);
-        pid_depth.kd = float_convert(p, 95, 98);
+        // 3) 解析 翻滚 PID
+        pid_roll.kp = float_convert(p, 84, 87);
+        pid_roll.ki = float_convert(p, 88, 91);
+        pid_roll.kd = float_convert(p, 92, 95);
         break;
 
     default:

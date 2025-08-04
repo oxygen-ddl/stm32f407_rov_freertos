@@ -10,5 +10,6 @@ void light_set(uint16_t light_data);
 void electromagnet_set(uint8_t electromagnet_data);
 void push_rod_set(uint8_t push_rod_data);
 void servo_electromagnet_set(uint8_t servo_electromagnet_data);
+void servo_set(uint16_t servo_data);
 
 #endif /* MOVE_DRV_H */

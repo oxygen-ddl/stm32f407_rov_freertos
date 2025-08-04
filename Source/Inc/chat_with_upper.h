@@ -30,7 +30,7 @@
 
 /**************************************数据包帧头信息***************************************** */
 /***     用于PID调参          ***/
-#define RX_StartBit_PID                     0xC6       //下位机接收pid参数
+#define RX_StartBit_PID                     0xB6       //下位机接收pid参数
 /***       手柄            ***/
 #define RX_StartBit_Handle_basic            0xB1        //下位机接收手柄基本运动数据
 #define RX_StartBit_Handle_light            0xB2        //下位机接收手柄功能按键数据

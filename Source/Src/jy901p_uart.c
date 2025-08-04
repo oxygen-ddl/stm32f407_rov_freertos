@@ -50,7 +50,7 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len);
 /*—————— 公有接口 ——————*/
 void JY901_UART_Init(void)
 {
-
+    
     // 启动DMA接收
     HAL_UART_Receive_DMA(&huart2, jy901_rx_buffer, JY901_RX_BUFFER_SIZE);
     // 使能空闲中断
@@ -128,7 +128,7 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
                     rawL = p[8];
                     version = (rawH << 8) | rawL;
 
-                    pitch-=pitch_start;
+                    pitch+=pitch_start;
                     roll-=roll_start;
                     yaw-=yaw_start;
 
@@ -160,7 +160,6 @@ void JY901_ParseData(const uint8_t *buf, uint16_t len)
 
                     yaw_total = yaw + turns_of_yaw * 360;
                     
-
                     // 更新上次值
                     roll_last = roll;
                     pitch_last = pitch;
@@ -233,7 +232,7 @@ void JY901_ProcessTask(void *pvParameters)
             JY901_ParseData(uart2_msg.data, uart2_msg.len);
             uart2_it_flag = 0;
         }
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

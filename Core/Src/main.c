@@ -31,6 +31,7 @@
 #include "move_control.h"
 #include "shtc3.h"
 #include "move_drv.h"
+#include "jy901p_uart.h"
 
 /* USER CODE END Includes */
 
@@ -111,7 +112,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   pwm_init(); // 初始化PWM
   light_set(0); // 设置探照灯亮度为0
-  motor_init();//电机解锁，并轻微转一转
+  electromagnet_set(0); // 关闭电磁铁
+  motor_init();//电机解锁
   Sthc3SensorI2c_Init();
 
   /* USER CODE END 2 */
