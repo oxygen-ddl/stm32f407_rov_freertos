@@ -145,20 +145,20 @@ void Pid_Out_Calculate(void)
     d = 1;
     e = 1;
     // 判断pitch(运动限幅)
-    if ((roll > -88)&& (roll < 88))//
+    if ((roll > -90)&& (roll < 90))//
     {
         a = 1; // roll
-        b = 1; // pitch
+        b = (ABS(cosf(roll))*0.5f + 0.5f); // pitch
         c = 1; // yaw
-        d = ABS(cosf(roll)); // 深度
+        d = ABS(cosf(roll))*0.5f+0.5f; // 深度
         e = 1; //向左
     }
-    else if ((roll > 92 ) || (roll < -92))//在偏角大的地方，停止pid输出
+    else if ((roll > 90 ) || (roll < -90))
     {
         a = 1; // roll
-        b = -0.8; // pitch
+        b = -(ABS(cosf(roll))*0.5f+0.5f); // pitch
         c = -1; // yaw
-        d = -ABS(cosf(roll)); // 深度
+        d = -(ABS(cosf(roll))*0.5f+0.5f); // 深度
         e = -1; //向左
     }
     else
@@ -273,8 +273,8 @@ void Move_Control_Task_Init(void)
         pid_out_parameter[i].integral_value_limit = 100.0;
     }
 
-    pid_out_parameter[0].parameter.kp = 25;
-    pid_out_parameter[1].parameter.kp = 15;
+    pid_out_parameter[0].parameter.kp = 20;
+    pid_out_parameter[1].parameter.kp = 10;
     pid_out_parameter[2].parameter.kp = 35;
     pid_out_parameter[3].parameter.kp = 10;
     pid_out_parameter[4].parameter.kp = 10;
@@ -287,7 +287,7 @@ void Move_Control_Task_Init(void)
     pid_out_parameter[4].parameter.ki = 0;
     pid_out_parameter[5].parameter.ki = 0.5;
 
-    pid_out_parameter[0].parameter.kd = 1;
+    pid_out_parameter[0].parameter.kd = 2;
     pid_out_parameter[1].parameter.kd = 0;
     pid_out_parameter[2].parameter.kd = 0;
     pid_out_parameter[3].parameter.kd = 0;
@@ -316,7 +316,7 @@ void Handle_Control_Task(void *pvParameters)
     for (;;)
     {
 
-        pid_out_parameter[0].target_value += (float)move_roll * 0.003f;
+        pid_out_parameter[0].target_value += (float)move_roll * 0.005f;
 
         pid_out_parameter[1].target_value += (float)move_pitch * 0.0015f;
 
@@ -382,12 +382,12 @@ void Handle_Control_Task(void *pvParameters)
             pid_out_parameter[4].target_value = 20; // 左右平移
         }
 
-        if(mode.autorolling == 0x01) // 翻滚开启
-        {
-            pid_out_parameter[0].parameter.kp = pid_roll.kp;
-            pid_out_parameter[0].parameter.ki = pid_roll.ki;
-            pid_out_parameter[0].parameter.kd = pid_roll.kd; 
-        }
+        // if(mode.autorolling == 0x01) // 翻滚开启
+        // {
+        //     pid_out_parameter[0].parameter.kp = pid_roll.kp;
+        //     pid_out_parameter[0].parameter.ki = pid_roll.ki;
+        //     pid_out_parameter[0].parameter.kd = pid_roll.kd; 
+        // }
         mode_last = mode; // 更新上一次的模式数据
         if (move_lock_flag == 1)
         {

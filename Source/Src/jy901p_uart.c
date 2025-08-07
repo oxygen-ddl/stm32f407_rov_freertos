@@ -59,10 +59,6 @@ void JY901_UART_Init(void)
 
 uint16_t version = 0; // JY901 版本号
 /**
- * @brief  将原始字节流逐字节传给 CopeSerial2Data，
- *         最后更新全局变量 accx/angx/roll…
- */
-/**
  * @brief  按协议解析一段原始字节流
  * @param  buf 原始接收缓冲区
  * @param  len 缓冲区长度
