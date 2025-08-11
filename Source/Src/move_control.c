@@ -137,7 +137,7 @@ void Pid_Out_Calculate(void)
     pid_out_parameter[5].err_last = pid_out_parameter[5].err;
 
     pid_out_parameter[5].out_data = - (pid_out_parameter[5].out_data);
-    // 0-翻滚 1-俯仰
+
     static float a, b, c, d , e;
     a = 1;
     b = 1;
@@ -276,9 +276,9 @@ void Move_Control_Task_Init(void)
     pid_out_parameter[0].parameter.kp = 20;
     pid_out_parameter[1].parameter.kp = 10;
     pid_out_parameter[2].parameter.kp = 35;
-    pid_out_parameter[3].parameter.kp = 10;
-    pid_out_parameter[4].parameter.kp = 10;
-    pid_out_parameter[5].parameter.kp = 10;
+    pid_out_parameter[3].parameter.kp = 15;
+    pid_out_parameter[4].parameter.kp = 15;
+    pid_out_parameter[5].parameter.kp = 15;
 
     pid_out_parameter[0].parameter.ki = 0;
     pid_out_parameter[1].parameter.ki = 0;
